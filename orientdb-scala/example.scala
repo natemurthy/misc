@@ -15,11 +15,11 @@ graph.addEdge(null,m0,m2,"is aggregate of")
 graph.addEdge(null,m0,m3,"is aggregate of")
 graph.commit
 
-val substations = graph.getVertices.asScala.toList.filter(_.getProperty("name").asInstanceOf[String]=="substation")
-//val substations = graph.getVertices.toList.filter(_.getProperty("name").asInstanceOf[String]=="substation")
+val allVertices = graph.getVertices.asScala.toList
+//val allVertices = graph.getVertices.toList
 
-val submeters = graph.getVertices.asScala.toList.filter(_.getProperty("name").asInstanceOf[String].contains("submeter"))
-//val submeters = graph.getVertices.toList.filter(_.getProperty("name").asInstanceOf[String].contains("submeter"))
+val substations = allVertices.filter(_.getProperty("name").asInstanceOf[String]=="substation")
+val submeters = allVertices.filter(_.getProperty("name").asInstanceOf[String].contains("submeter"))
 
 submeters.map(_.getProperty("net_load").asInstanceOf[Double]).foldLeft(0.0)(_+_)
 
