@@ -1,6 +1,6 @@
 import com.tinkerpop.blueprints.impls.orient._, com.tinkerpop.blueprints._
-import scala.collection.JavaConverters._
-//import scala.collection.JavaConversions._
+import collection.JavaConverters._
+//import collection.JavaConversions._
 
 object example {
 
