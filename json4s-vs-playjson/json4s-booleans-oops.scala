@@ -6,11 +6,11 @@ object `json4s-booleans-oops` {
 case class Person(active:Boolean,name:String)
 
 object Person {
-	import scala.util.Try
-	def apply(active:String,name:String): Person = Person(
-			Try(active.toBoolean).getOrElse(false),
-			name
-		)
+  import scala.util.Try
+  def apply(active:String,name:String): Person = Person(
+  	  Try(active.toBoolean).getOrElse(false),
+  	  name
+  	)
 }
 
 implicit val formats = DefaultFormats
