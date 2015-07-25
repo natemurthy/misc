@@ -11,7 +11,7 @@ import org.eclipse.jetty.websocket.client.WebSocketClient
 object EchoClient {
  
     def main(args: Array[String]) {
-        val destUri = "ws://gw.solarcity.com:2012/test-1234"
+        val destUri = "ws://echo.websocket.org" 
         val client = new WebSocketClient();
         val socket = new EchoSocket();
         try {
