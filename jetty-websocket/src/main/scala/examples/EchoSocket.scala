@@ -14,33 +14,29 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
  * Basic Echo Client Socket
  */
 @WebSocket(maxTextMessageSize = 64 * 1024)
-class EchoSocket(var closeLatch:CountDownLatch = new CountDownLatch(1)) {
+class EchoSocket {
  
-    private var session: Session = _;
- 
-    @throws[InterruptedException]
-    def awaitClose(duration:Int, unit:TimeUnit): Boolean = {
-        return closeLatch.await(duration, unit);
-    }
+    private val _closeLatch = new CountDownLatch(1)
+    private var _session: Session = _
  
     @OnWebSocketClose
     def onClose(statusCode:Int, reason:String) = {
-        println(s"Connection closed: $statusCode - $reason");
-        session = null;
-        closeLatch.countDown();
+        println(s"Connection closed: $statusCode - $reason")
+        _session = null
+        _closeLatch.countDown()
     }
  
     @OnWebSocketConnect
-    def onConnect(_session:Session) {
-        println(s"Got connect: ${_session}");
-        session = _session;
+    def onConnect(session:Session) {
+        println(s"Connection established: ${session}")
+        _session = session
         try {
             var fut: Future[Void] = null
-            fut = session.getRemote().sendStringByFuture("Hello");
-            fut.get(2, TimeUnit.SECONDS);
-            fut = session.getRemote().sendStringByFuture("Thanks for the conversation.");
-            fut.get(2, TimeUnit.SECONDS);
-            session.close(StatusCode.NORMAL, "I'm done");
+            fut = session.getRemote().sendStringByFuture("Hello")
+            fut.get(2, TimeUnit.SECONDS)
+            fut = session.getRemote().sendStringByFuture("Thanks for the conversation.")
+            fut.get(2, TimeUnit.SECONDS)
+            //session.close(StatusCode.NORMAL, "I'm done");
         } catch {
            case t:Throwable => t.printStackTrace();
         }
@@ -48,6 +44,26 @@ class EchoSocket(var closeLatch:CountDownLatch = new CountDownLatch(1)) {
  
     @OnWebSocketMessage
     def onMessage(msg:String) {
-        println(s"Got msg: $msg");
+        println(s"Got msg: $msg")
     }
+
+    @throws[InterruptedException]
+    def awaitClose(duration:Int, unit:TimeUnit): Boolean = {
+        return _closeLatch.await(duration, unit)
+    }
+
+    private[this] def useSessionFor(func: Session => Any) {
+        Option(_session) match {
+            case Some(s) => func(s)
+            case None    => println("Session no longer available")
+        }
+    }
+
+    @throws[InterruptedException]
+    def persistConnection() = _closeLatch.await()
+
+    def sendMessage(msg:String) = useSessionFor((s:Session) => s.getRemote.sendStringByFuture(msg))
+
+    def close() = useSessionFor((s:Session) => s.close(StatusCode.NORMAL, "I'm done"))
+
 }

@@ -12,23 +12,56 @@ object EchoClient {
  
     def main(args: Array[String]) {
         val destUri = "ws://echo.websocket.org" 
-        val client = new WebSocketClient();
-        val socket = new EchoSocket();
+        val client = new WebSocketClient()
+        val socket = new EchoSocket()
         try {
-            client.start();
-            val echoUri = new URI(destUri);
-            val request = new ClientUpgradeRequest();
-            client.connect(socket, echoUri, request);
-            println("Connecting to : %s%n", echoUri);
-            socket.awaitClose(5, TimeUnit.SECONDS);
+            client.start()
+            val echoUri = new URI(destUri)
+            val request = new ClientUpgradeRequest()
+            client.setDaemon(true)
+            client.connect(socket, echoUri, request)
+            println(s"Connecting to : $echoUri")
+            println(s"Max idle timeout: ${client.getMaxIdleTimeout}")
+            //socket.awaitClose(10, TimeUnit.SECONDS)
+            socket.persistConnection()
         } catch {
-          case t: Throwable => t.printStackTrace();
+          case t: Throwable => t.printStackTrace()
         } finally {
             try {
                 client.stop();
             } catch {
-                case e:Exception => e.printStackTrace();
+                case e:Exception => e.printStackTrace()
             }
         }
     }
+}
+
+class Handler extends Runnable {
+
+    val destUri = "ws://echo.websocket.org" 
+    val client = new WebSocketClient()
+    val socket = new EchoSocket()
+
+    def run() {
+        try {
+            client.start()
+            val echoUri = new URI(destUri)
+            val request = new ClientUpgradeRequest()
+            //client.setDaemon(true)
+            client.connect(socket, echoUri, request)
+            println(s"Connecting to: $echoUri")
+            println(s"Max idle timeout: ${client.getMaxIdleTimeout} ms")
+            //socket.awaitClose(10, TimeUnit.SECONDS)
+            socket.persistConnection()
+        } catch {
+          case t: Throwable => t.printStackTrace()
+        } finally {
+            try {
+                client.stop();
+            } catch {
+                case e:Exception => e.printStackTrace()
+            }
+        }
+    }
+
 }
