@@ -11,8 +11,7 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 public class SimpleEchoClient {
  
     public static void main(String[] args) {
-        //String destUri = "ws://echo.websocket.org";
-        String destUri = "ws://gw.solarcity.com:2012/test-1234";
+        String destUri = "ws://echo.websocket.org";
         if (args.length > 0) {
             destUri = args[0];
         }
