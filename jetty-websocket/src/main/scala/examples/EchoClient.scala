@@ -65,3 +65,17 @@ class Handler extends Runnable {
     }
 
 }
+
+// Example with executor service
+object example {
+    
+import examples._, org.eclipse.jetty.websocket.client._, java.net.URI, java.util.concurrent._
+val pool = Executors.newFixedThreadPool(4)
+val handler = new Handler()
+val s = handler.socket
+pool.execute(handler)
+s.sendMessage("wherefore art thou")
+s.close
+s.sendMessage("wherefore art thou")
+
+}
