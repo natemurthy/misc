@@ -5,6 +5,9 @@ import spray.http._
 import HttpMethods._
 import StatusCodes._
 
+/**
+* Used for tech empower round 5 benchmarks
+*/
 class BenchmarkService extends Actor {
   import context.dispatcher // ExecutionContext for scheduler
   import Uri._
