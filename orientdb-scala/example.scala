@@ -6,10 +6,10 @@ object example {
 
 val graph =  new OrientGraph("remote:/localhost/grid-topology")
 
-val m0 = graph.addVertex(); m0.setProperty("name","substation"); m0.setProperty("net_load",130.1)
-val m1 = graph.addVertex(); m1.setProperty("name","submeter-1"); m1.setProperty("net_load",25.9)
-val m2 = graph.addVertex(); m2.setProperty("name","submeter-2"); m2.setProperty("net_load",71.4)
-val m3 = graph.addVertex(); m3.setProperty("name","submeter-3"); m3.setProperty("net_load",32.8)
+val m0 = graph.addVertex(null,Nil: _*); m0.setProperty("name","substation"); m0.setProperty("net_load",130.1)
+val m1 = graph.addVertex(null,Nil: _*); m1.setProperty("name","submeter-1"); m1.setProperty("net_load",25.9)
+val m2 = graph.addVertex(null,Nil: _*); m2.setProperty("name","submeter-2"); m2.setProperty("net_load",71.4)
+val m3 = graph.addVertex(null,Nil: _*); m3.setProperty("name","submeter-3"); m3.setProperty("net_load",32.8)
 graph.addEdge(null,m0,m1,"is parent of")
 graph.addEdge(null,m0,m2,"is parent of")
 graph.addEdge(null,m0,m3,"is parent of")
