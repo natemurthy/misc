@@ -1,6 +1,3 @@
-package com.solarcity.db
-
-
 import com.orientechnologies.orient.client.remote.OServerAdmin
 import com.orientechnologies.orient.core.record.impl.ODocument
 import org.scalatest.FlatSpec
