@@ -2,7 +2,7 @@
 
 Project folder for Oakland Advanced Scala Study Group: An examination of using the OrientDB Java Graph API in Scala.
 
-#### Topics:
+### Topics:
 * Creating/reading records with OrientDB Graph APIe
   * Overloaded methods
   * Handling Java varargs in Scala
