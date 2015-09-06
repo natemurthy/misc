@@ -24,7 +24,7 @@ object Examples extends App {
   } 
 
   def example3 = {
-    // maybe orientdb's scla example will work
+    // maybe orientdb's scala example will work
     case class Foo(a:Int,b:String) { @Id var id: String = _; @Version var version: String = _ }
     val uri = "remote:localhost/graph-db"
     val db = new OObjectDatabaseTx(uri)
