@@ -6,6 +6,10 @@ import javax.persistence.{Version, Id}
 
 
 object Examples extends App {
+  
+  implicit def orientDbResource[A <: OrientGraph] = new Resource[A] {
+    override def close(r:A) = r.shutdown()
+  }
 
   val factory = new OrientGraphFactory("remote:/localhost/graph-db").setupPool(1,10)
   val graph = factory.getTx
