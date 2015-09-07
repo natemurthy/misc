@@ -15,7 +15,7 @@ object Examples extends App {
   val factory = new OrientGraphFactory("remote:/localhost/graph-db").setupPool(1,10)
   val graph = factory.getTx
   def example1 = {
-    //graph.addVerex()        // throws deprecation warning
+    graph.addVertex()        // throws deprecation warning
     //graph.addVertex(null)   // fails in scala, but works in java. why?
     // Can anyone guess how to do this in Scala?
   }
