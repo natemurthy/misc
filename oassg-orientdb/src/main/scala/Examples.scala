@@ -8,8 +8,8 @@ import resource._
 
 object Examples extends App {
   
-  implicit def orientDbResource[A <: OrientGraph] = new Resource[A] {
-    override def close(r:A) = r.shutdown()
+  implicit object orientDbResource extends Resource[OrientGraph] {
+    override def close(graph: OrientGraph) = graph.shutdown()
   }
 
   val factory = new OrientGraphFactory("remote:/localhost/graph-db").setupPool(1,10)
