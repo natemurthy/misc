@@ -1,0 +1,18 @@
+<hazelcast>
+  <network>
+    <join>
+      <multicast enabled="false">
+      </multicast>
+      <tcp-ip enabled="false">
+      </tcp-ip>
+      <aws enabled="true">
+        <access-key>AWS_ACCESS_KEY_ID</access-key>
+        <secret-key>AWS_SECRET_ACCESS_KEY</secret-key>
+        <region>us-west-2</region>
+        <security-group-name>default</security-group-name>
+        <tag-key>Name</tag-key>
+        <tag-value>value</tag-value>
+      </aws>
+    </join>
+  </network>
+</hazelcast>
