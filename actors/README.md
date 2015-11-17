@@ -1,6 +1,6 @@
 ## Actors
 
-Quick performance omparison of Akka (a JVM-based actor implementation) and Pykka (a Python-based
+Quick performance comparison of Akka (a JVM-based actor implementation) and Pykka (a Python-based
 actor implementation inspired by Akka). In the examples below, we send 1 million messages to an actor 
 that assigns the message count to an internal variable. These tests were compiled and executed on an 
 Asus Zenbook UX31A, Intel Core i7 3517U 1.9 GHz dual core with hyperthreading, 4 GB RAM, running 
