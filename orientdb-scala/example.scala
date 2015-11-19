@@ -26,4 +26,8 @@ submeters.map(_.getProperty("net_load").asInstanceOf[Double]).foldLeft(0.0)(_+_)
 val substation = substations(0)
 substation.getVertices(Direction.OUT).asScala
 
+// using SQL commands
+import com.orientechnologies.orient.core.sql.OCommandSQL
+graph.command(new OCommandSQL("SELECT FROM V")).execute().asInstanceOf[java.lang.Iterable[Vertex]].asScala.toList
+
 }
