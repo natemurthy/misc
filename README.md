@@ -1,2 +1,2 @@
 # misc
-Workspace repository of miscellaneous projects and useful libraries
+Workspace repository of miscellaneous projects
