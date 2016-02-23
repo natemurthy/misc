@@ -4,7 +4,7 @@ Question 2
 Given an array of letters, find the letter that occurs most often.
 For example:
     
-	input: arr = ['a','b','a','c','d','d','e','d','x']
+    input: arr = ['a','b','a','c','d','d','e','d','x']
    output: 'd'
 """
 
