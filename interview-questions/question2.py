@@ -1,7 +1,12 @@
-# given
-arr = ['a','b','a','c','d','d','e','d','x']
+"""
+Question 2
 
-# find letter that occurs most often
+Given an array of letters, find the letter that occurs most often.
+For example:
+    
+	input: arr = ['a','b','a','c','d','d','e','d','x']
+   output: 'd'
+"""
 
 import operator
 

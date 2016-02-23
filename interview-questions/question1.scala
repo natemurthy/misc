@@ -1,3 +1,14 @@
+/*
+Quesiton 1
+
+Given a linked list of integers whose length is a multiple of k, implement a method
+that splits the linked list into sublists of length k, reverse each sublist, and then
+combine the sublists into a whole linked list. For example:
+
+    input: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+   output: 3 -> 2 -> 1 -> 6 -> 5 -> 4
+*/
+
 import collection.mutable.LinkedList
 
 def seedLinkedList(ints: Iterable[Int], linkedList: LinkedList[Int] = null): LinkedList[Int] = {

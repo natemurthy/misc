@@ -1,9 +1,12 @@
-# Merge two sorted arrays
+"""
+Question 3
 
-l = [1,2,6,8,10]
-r = [2,5,6,9]
+Merge two sorted arrays. For example:
 
-out = [1,2,2,5,6,8,9,10]
+    l = [1,2,6,8,10]
+    r = [2,5,6,9]  
+  merge(l,r) == [1,2,2,5,6,8,9,10]
+"""
 
 def merge_sorted_lists(left, right):
     def insert_in_order(value,arr):
@@ -16,4 +19,3 @@ def merge_sorted_lists(left, right):
         left = insert_in_order(v,left)
     return left
 
-merge_sorted_lists(l,r)==out
