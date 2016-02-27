@@ -1,0 +1,10 @@
+services:
+  myapp:
+    build: .
+    depends_on:
+      - orientdb
+      - rabbitmq
+  orientdb:
+    image: orientdb/orientdb
+  rabbitmq:
+    image: rabbitmq
