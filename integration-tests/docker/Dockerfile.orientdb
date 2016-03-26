@@ -1,0 +1,13 @@
+FROM orientdb/orientdb
+#COPY orientdb-server-config.xml /orientdb/config
+WORKDIR /orientdb
+VOLUME /orientdb/databases
+
+#OrientDb binary
+EXPOSE 2424
+
+#OrientDb http
+EXPOSE 2480
+
+# Default command start the server
+CMD server.sh
