@@ -1,6 +1,8 @@
+version: '2'
 services:
   myapp:
     build: .
+    container_name: myapp_integration_env
     depends_on:
       - orientdb
       - rabbitmq
@@ -8,3 +10,8 @@ services:
     image: orientdb/orientdb
   rabbitmq:
     image: rabbitmq
+  expose:
+    - "2424:2424"
+    - "2480:2480:"
+    - "5672:5672"
+    - "15672:15672"
