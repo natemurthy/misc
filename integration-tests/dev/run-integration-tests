@@ -1,0 +1,26 @@
+#!/bin/bash
+
+PROJECT_DIR="$(cd "`dirname $0`"/..; pwd)"
+cd $PROJECT_DIR
+
+uname=`uname`
+
+case $uname in
+    "Linux")
+        export CONTAINER_HOST="localhost"
+        ;;
+    "Darwin")
+        if hash docker-machine 2>/dev/null; then
+            export CONTAINER_HOST=`docker-machine ip default`
+        else
+            echo "Your Mac needs docker-machine installed"
+            exit 1
+        fi
+        ;;
+    *) echo "Unsupported OS"; exit 1 ;;
+esac
+
+sbt clean coverage integration:test
+sbt coverageReport
+
+unset CONTAINER_HOST

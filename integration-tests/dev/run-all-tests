@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Script will run both unit tests and integration tests.
+# Must execute dev/setup-containers before running
+
+PROJECT_DIR="$(cd "`dirname $0`"/..; pwd)"
+cd $PROJECT_DIR
+
+if hash docker 2>/dev/null; then
+    docker --version
+else
+    echo "You need Docker installed to run integration tests"
+    exit 1
+fi
+
+fail_msg() {
+    echo -e "Failed to execute integration tests"
+}
+
+has_orientdb_container=`docker images | grep myapp/orientdb`
+has_rabbitmq_container=`docker images | grep myapp/rabbitmq`
+
+if [[ $has_orientdb_container != *"orientdb"* || \
+      $has_rabbitmq_container != *"rabbitmq"* ]]; then
+    echo "Run dev/setup-containers to pull container images"
+    fail_msg
+    exit 1
+fi
+
+orientdb_name="myapp_orientdb"; rabbitmq_name="myapp_rabbitmq"
+inspect_orientdb=`docker inspect -f {{.State.Running}} $orientdb_name 2>&1`
+inspect_rabbitmq=`docker inspect -f {{.State.Running}} $rabbitmq_name 2>&1`
+
+if [[ $inspect_orientdb != "true" || $inspect_rabbitmq != "true" ]]; then
+   echo "$orientdb_name: $inspect_orientdb"
+   echo "$rabbitmq_name: $inspect_rabbitmq"
+   echo "Run dev/setup-containers to start containers"
+   fail_msg
+   exit 1 
+fi
+
+uname=`uname`
+
+case $uname in
+    "Linux")
+        export CONTAINER_HOST="localhost" 
+        ;;
+    "Darwin")
+        if hash docker-machine 2>/dev/null; then
+            export CONTAINER_HOST=`docker-machine ip default`
+        else
+            echo "Your Mac needs docker-machine installed"
+            exit 1
+        fi
+        ;;  
+    *) echo "Unsupported OS"; exit 1 ;;
+esac
+
+sbt clean coverage test integration:test
+sbt coverageReport
+
+unset CONTAINER_HOST
+echo "Stopping and removing container images..."
+docker stop $orientdb_name $rabbitmq_name &>/dev/null 
+docker rm   $orientdb_name $rabbitmq_name &>/dev/null
+docker rmi  myapp/orientdb myapp/rabbitmq &>/dev/null 
+echo "Done"

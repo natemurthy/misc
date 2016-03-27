@@ -1,0 +1,45 @@
+#!/bin/bash
+
+PROJECT_DIR="$(cd "`dirname $0`"/..; pwd)"
+cd $PROJECT_DIR
+
+if hash docker 2>/dev/null; then
+    docker --version
+else
+    echo "You need Docker installed to pull container imgages"
+    exit 1
+fi
+
+has_orientdb_container=`docker images | grep myapp/orientdb`
+has_rabbitmq_container=`docker images | grep myapp/rabbitmq`
+
+if [[ $has_orientdb_container != *"orientdb"* ]]; then
+    docker build -f $PROJECT_DIR/docker/Dockerfile.orientdb -t myapp/orientdb $PROJECT_DIR 
+fi
+
+if [[ $has_rabbitmq_container != *"rabbitmq"* ]]; then
+    docker build -f $PROJECT_DIR/docker/Dockerfile.rabbitmq -t myapp/rabbitmq $PROJECT_DIR
+fi
+
+orientdb_name="myapp_orientdb"; rabbitmq_name="myapp_rabbitmq"
+inspect_orientdb=`docker inspect -f {{.State.Running}} $orientdb_name 2>&1`
+inspect_rabbitmq=`docker inspect -f {{.State.Running}} $rabbitmq_name 2>&1`
+
+if [[ $inspect_orientdb == *"No such image or container"* ]]; then
+    docker run -d --name $orientdb_name \
+               -v $PROJECT_DIR/docker/databases:/orientdb/databases \
+               -p 2424:2424 -p 2480:2480 \
+               -e "ORIENTDB_ROOT_PASSWORD=password" myapp/orientdb
+elif [[ $inspect_orientdb == "false" ]]; then
+    docker start $orientdb_name 
+fi
+
+if [[ $inspect_rabbitmq == *"No such image or container"* ]]; then
+    docker run -d --name $rabbitmq_name \
+               -p 5672:5672 -p 15672:15672 \
+               myapp/rabbitmq
+elif [[ $inspect_rabbitmq == "false" ]]; then
+    docker start $rabbitmq_name
+fi
+
+docker ps
