@@ -22,7 +22,7 @@ has_rabbitmq_container=`docker images | grep myapp/rabbitmq`
 
 if [[ $has_orientdb_container != *"orientdb"* || \
       $has_rabbitmq_container != *"rabbitmq"* ]]; then
-    echo "Run dev/setup-containers to pull container images"
+    echo "Run ./dev/setup-containers to pull container images"
     fail_msg
     exit 1
 fi
@@ -32,16 +32,14 @@ inspect_orientdb=`docker inspect -f {{.State.Running}} $orientdb_name 2>&1`
 inspect_rabbitmq=`docker inspect -f {{.State.Running}} $rabbitmq_name 2>&1`
 
 if [[ $inspect_orientdb != "true" || $inspect_rabbitmq != "true" ]]; then
-   echo "$orientdb_name: $inspect_orientdb"
-   echo "$rabbitmq_name: $inspect_rabbitmq"
-   echo "Run dev/setup-containers to start containers"
+   echo "[$orientdb_name] $inspect_orientdb"
+   echo "[$rabbitmq_name] $inspect_rabbitmq"
+   echo "Run ./dev/setup-containers to start containers"
    fail_msg
    exit 1 
 fi
 
-uname=`uname`
-
-case $uname in
+case `uname` in
     "Linux")
         export CONTAINER_HOST="localhost" 
         ;;
@@ -50,6 +48,7 @@ case $uname in
             export CONTAINER_HOST=`docker-machine ip default`
         else
             echo "Your Mac needs docker-machine installed"
+            fail_msg
             exit 1
         fi
         ;;  

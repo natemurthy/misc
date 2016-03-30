@@ -3,9 +3,7 @@
 PROJECT_DIR="$(cd "`dirname $0`"/..; pwd)"
 cd $PROJECT_DIR
 
-uname=`uname`
-
-case $uname in
+case `uname` in
     "Linux")
         export CONTAINER_HOST="localhost"
         ;;
