@@ -4,7 +4,7 @@ import Keys._
 name := "integration-tests"
 scalaVersion in ThisBuild := "2.11.7"
 
-coverageMinimum := 75
+coverageMinimum := 90
 coverageFailOnMinimum := true
 
 libraryDependencies ++=
