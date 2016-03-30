@@ -5,7 +5,7 @@ import myapp.integration.setup.IntegrationFunSuite
 
 class ServiceIntegrationTest extends IntegrationFunSuite {
 
-  lazy val srv = new ServiceImpl{ host = sys.env("CONTAINER_HOST") }
+  lazy val srv = new ServiceImpl { host = sys.env("CONTAINER_HOST") }
 
   test("write to database") {
     srv.writeToDb("Damian Lillard")
