@@ -26,8 +26,9 @@ inspect_orientdb=`docker inspect -f {{.State.Running}} $orientdb_name 2>&1`
 inspect_rabbitmq=`docker inspect -f {{.State.Running}} $rabbitmq_name 2>&1`
 
 if [[ $inspect_orientdb == *"No such image or container"* ]]; then
+    unzip -q $PROJECT_DIR/docker/databases.zip
     docker run -d --name $orientdb_name \
-               -v $PROJECT_DIR/docker/databases:/orientdb/databases \
+               -v $PROJECT_DIR/databases:/orientdb/databases \
                -p 2424:2424 -p 2480:2480 \
                -e "ORIENTDB_ROOT_PASSWORD=password" myapp/orientdb
 elif [[ $inspect_orientdb == "false" ]]; then

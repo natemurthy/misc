@@ -63,4 +63,5 @@ echo "Stopping and removing container images..."
 docker stop $orientdb_name $rabbitmq_name &>/dev/null 
 docker rm   $orientdb_name $rabbitmq_name &>/dev/null
 docker rmi  myapp/orientdb myapp/rabbitmq &>/dev/null 
+rm -rf $PROJECT_DIR/databases/ 
 echo "Done"
