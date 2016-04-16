@@ -1,8 +1,8 @@
 {
   "id": "python-app",
   "cmd": "python3 -m http.server $PORT",
-  "mem": 50,
-  "cpus": 0.1,
+  "mem": 32,
+  "cpus": 0.5,
   "instances": 1,
   "constraints": [
     ["hostname", "UNIQUE"]
