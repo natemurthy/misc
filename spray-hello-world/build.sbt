@@ -4,11 +4,11 @@ import spray.revolver.RevolverPlugin.Revolver
 
 name := "spray-hello-world"
 version := "1.0"
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 resolvers += "spray repo" at "http://repo.spray.io"
 
 libraryDependencies ++= {
-  val akkaVersion  = "2.3.12"
+  val akkaVersion  = "2.4.2"
   val sprayVersion = "1.3.3"
   Seq(
     "com.typesafe.akka" %% "akka-actor"    % akkaVersion, 
