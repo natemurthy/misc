@@ -1,0 +1,10 @@
+{
+  "id": "python-app",
+  "cmd": "python3 -m http.server $PORT",
+  "mem": 32,
+  "cpus": 0.5,
+  "instances": 1,
+  "constraints": [
+    ["hostname", "UNIQUE"]
+  ]
+}

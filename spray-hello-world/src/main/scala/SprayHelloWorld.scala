@@ -10,7 +10,6 @@ object SprayHelloWorld extends App {
   import java.net.InetAddress
   implicit val system = ActorSystem("spray-hello-world")
   val actorRef = system.actorOf(Props[MyActor], "handler")
-  //val actorRef = system.actorOf(Props[BenchmarkService], "handler")
   IO(Http) ! Http.Bind(actorRef, interface = InetAddress.getLocalHost.getHostAddress, port = 8080)
 }
 
