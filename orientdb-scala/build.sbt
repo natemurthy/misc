@@ -11,5 +11,5 @@ scalaVersion in ThisBuild := "2.11.7"
 libraryDependencies ++=  
 Seq(
   "com.orientechnologies" %  "orientdb-graphdb" % "2.1.16",
-  "org.scalatest"         %% "scalatest"        % "2.2." % "test"
+  "org.scalatest"         %% "scalatest"        % "2.2.6" % "test"
 )
