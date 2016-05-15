@@ -4,7 +4,7 @@ name := """akka-test"""
 
 version := "0.1-SNAPSHOT"
 
-scalaVersion in ThisBuild := "2.11.1"
+scalaVersion in ThisBuild := "2.11.8"
 
 resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
