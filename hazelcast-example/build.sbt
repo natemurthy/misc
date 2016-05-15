@@ -1,6 +1,6 @@
 name := "hazelcast-example"
 
-scalaVersion in ThisBuild := "2.11.6"
+scalaVersion in ThisBuild := "2.11.8"
 
 val hzVersion = "3.5.3"
 
