@@ -4,7 +4,7 @@ name := "orientdb-scala"
 
 version := "1.0"
 
-scalaVersion in ThisBuild := "2.11.7"
+scalaVersion in ThisBuild := "2.11.8"
 
 //scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
 
