@@ -1,7 +1,5 @@
 import sbt._
 
-version := "1.0"
-
 libraryDependencies ++=  
 Seq(
   "org.iq80.leveldb"          % "leveldb"         %  "0.7"  %  "optional;provided",
