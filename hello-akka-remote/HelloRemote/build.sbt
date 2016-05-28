@@ -1,7 +1,5 @@
 name := "hello-remote"
 
-scalaVersion := "2.11.6"
-
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= Seq(
