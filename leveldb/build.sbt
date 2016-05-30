@@ -7,8 +7,8 @@ scalaVersion in ThisBuild := "2.11.8"
 lazy val myProject = Project(
     id = "myProject",
     base = file("."),
-    settings = Defaults.defaultSettings ++ Seq(mainRunNobootcpSetting, testRunNobootcpSetting
-    )
+    settings = Defaults.defaultSettings ++ 
+      Seq(mainRunNobootcpSetting, testRunNobootcpSetting)
   )
 
   val runNobootcp =
@@ -16,7 +16,6 @@ lazy val myProject = Project(
 
   val mainRunNobootcpSetting = runNobootcp <<= runNobootcpInputTask(Runtime)
   val testRunNobootcpSetting = runNobootcp <<= runNobootcpInputTask(Test)
-
 
   def runNobootcpInputTask(configuration: Configuration) = inputTask {
     (argTask: TaskKey[Seq[String]]) => (argTask, streams, fullClasspath in configuration) map { (at, st, cp) =>
