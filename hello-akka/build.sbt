@@ -2,7 +2,7 @@ import sbt._
 
 name := "hello-akka"
 
-scalaVersion in ThisBuild := "2.11.6"
+scalaVersion in ThisBuild := "2.11.8"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka"  %% "akka-actor"   % "2.3.10",
