@@ -1,6 +1,6 @@
 name := "http-clients"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "com.typesafe.play"         %% "play-ws"        % "2.4.2",
