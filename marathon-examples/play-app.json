@@ -1,10 +1,17 @@
 {
-    "id": "play-app", 
-    "cmd": "./bin/play-multimodule-demo",
-    "cpus": 2,
-    "mem": 512.0,
-    "instances": 1,
-    "uris": [
-        "https://s3-us-west-2.amazonaws.com/natemurthy-artifacts/play-multimodule-demo-0.1-SNAPSHOT.zip"
-    ]
+  "id": "play-app", 
+  "cmd": "play-app-0.1/bin/play-app",
+  "cpus": 1,
+  "mem": 256.0,
+  "instances": 1,
+  "uris": [
+    "https://s3-us-west-2.amazonaws.com/natemurthy-artifacts/play-app-0.1.zip"
+  ],
+  "healthChecks": [
+    {
+      "protocol": "COMMAND",
+      "command": { "value": "curl -f -X GET http://$HOST:9000/" },
+      "maxConsecutiveFailures": 3
+    } 
+  ]
 }
