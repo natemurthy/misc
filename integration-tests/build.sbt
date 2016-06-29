@@ -2,7 +2,7 @@ import sbt._
 import Keys._
 
 name := "integration-tests"
-scalaVersion in ThisBuild := "2.11.7"
+scalaVersion in ThisBuild := "2.11.8"
 
 coverageMinimum := 90
 coverageFailOnMinimum := true
