@@ -11,7 +11,7 @@ double &ref()
 int main()
 {
   cout << ref() << endl;
-	ref() = 2.789;
-	cout << ref() << endl;
-	return 0;
+  ref() = 2.789;
+  cout << ref() << endl;
+  return 0;
 }

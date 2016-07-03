@@ -5,11 +5,11 @@ using namespace std;
 class Date {
 private:
   int dt_month;
-	int dt_day;
-	int dt_year;
+  int dt_day;
+  int dt_year;
 public:
   Date(int month, int day, int year);
-	void Display();
+  void Display();
 };
 
 Date::Date(int month, int day, int year)
@@ -25,6 +25,6 @@ void Date::Display()
 int main()
 {
   Date date(11,4,2001);
-	date.Display();
-	return 0;
+  date.Display();
+  return 0;
 }

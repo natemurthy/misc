@@ -10,13 +10,19 @@ void getstr(char *s)
   cin >> s;
 }
 
+string foo()
+{
+  return "foo";
+}
+
 // global string buffer
 char input[128];
 
 int main()
 {
-  cout << "Enter a string: ";
-	getstr(input);
-	cout << "You enetered: " << input << endl;
-	return 0;
+  //cout << "Enter a string: ";
+  //getstr(input);
+  //cout << "You enetered: " << input << endl;
+  cout << foo() << endl;
+  return 0;
 }
