@@ -6,14 +6,18 @@
 #include <string>
 #include <vector>
 
+enum Status { Created, Running, Pausing, Paused, Stopped };
+
 class Container
 {
 public:
   Container();
   ~Container();
-  bool isAlive();
-  void kill();
-  virtual std::string sayHello();
+  virtual std::string getId();
+  virtual Status getStatus();
+  void start();
+  void stop();
 private:
-  bool __alive;
+  Status status;
+  std::string id;
 };
