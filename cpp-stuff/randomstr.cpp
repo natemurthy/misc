@@ -8,6 +8,7 @@ std::string random_string(int& length)
 {
     static const std::string alphanums = "0123456789abcdef";
 
+    //  compile with -std=c++11 or -std=gnu++11 flags
     thread_local static std::mt19937 rg{std::random_device{}()};
     thread_local static std::uniform_int_distribution<> pick(0, alphanums.size() - 1);
 
