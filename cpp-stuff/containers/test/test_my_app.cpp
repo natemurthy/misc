@@ -10,13 +10,25 @@ void ContainerTest::SetUp() {};
 
 void ContainerTest::TearDown() {};
 
-TEST(ContainerTest, IsAlive) {
+TEST(ContainerTest, GetId) {
   Container *c = new Container;
-  EXPECT_TRUE(c->isAlive());
+  EXPECT_EQ(c->getId().length(), 12);
 }
 
-TEST(ContainerTest, SayHello) {
+TEST(ContainerTest, IsCreated) {
   Container *c = new Container;
-  EXPECT_EQ(c->sayHello(), "Hello, I am a container");
+  EXPECT_EQ(c->getStatus(), Created);
+}
+
+TEST(ContainerTest, IsRunning) {
+  Container *c = new Container;
+  c->start();
+  EXPECT_EQ(c->getStatus(), Running);
+}
+
+TEST(ContainerTest, HasStopped) {
+  Container *c = new Container;
+  c->stop();
+  EXPECT_EQ(c->getStatus(), Stopped);
 }
 

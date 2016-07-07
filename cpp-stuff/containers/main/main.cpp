@@ -3,22 +3,28 @@
 
 using namespace std;
 
-void callVirtual(Container *c)
+void printStatus(Container *c)
 {
-  if (c->isAlive())
-    cout << c->sayHello() << endl;
-  else
-    cout << "Container is dead" << endl;
+  switch (c->getStatus()) {
+    case Created:
+      cout << "Container " + c->getId() + " is created" << endl;
+      break;
+    case Running:
+      cout << "Container " + c->getId() + " is running" << endl;
+      break;
+    case Stopped:
+      cout << "Container " + c->getId() + " is stopped" << endl;
+      break;
+  }
 }
 
 int main()
 {
   Container *c = new Container;
-  callVirtual(c);
-
-  cout << "Going to kill this container" << endl;
-  c->kill();
-  callVirtual(c);
-
+  printStatus(c);
+  c->start();
+  printStatus(c);
+  c->stop();
+  printStatus(c);
   return 0;
 }
