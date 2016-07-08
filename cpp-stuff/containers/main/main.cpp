@@ -8,13 +8,13 @@ void printStatus(Container *c)
 {
   switch (c->getStatus()) {
     case Created:
-      cout << "Container " + c->getId() + " is created" << endl;
+      cout << "Container " + c->getId() + " created" << endl;
       break;
     case Running:
       cout << "Container " + c->getId() + " is running" << endl;
       break;
     case Stopped:
-      cout << "Container " + c->getId() + " is stopped" << endl;
+      cout << "Container " + c->getId() + " has stopped" << endl;
       break;
   }
 }
@@ -23,11 +23,11 @@ int main()
 {
   Container *c = new Container;
   printStatus(c);
-  usleep(2000000);
+  usleep(1.5*1e6); // thread sleep microsceconds
 
   c->start();
   printStatus(c);
-  usleep(4000000);
+  usleep(4*1e6);
 
   c->stop();
   printStatus(c);
