@@ -1,4 +1,5 @@
 #include <iostream>
+#include <unistd.h>
 #include "containers.hpp"
 
 using namespace std;
@@ -22,8 +23,12 @@ int main()
 {
   Container *c = new Container;
   printStatus(c);
+  usleep(2000000);
+
   c->start();
   printStatus(c);
+  usleep(4000000);
+
   c->stop();
   printStatus(c);
   return 0;
