@@ -2,7 +2,7 @@ name := "jetty-websocket"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.eclipse.jetty.websocket" % "websocket-client" % "9.3.1.v20150714",
