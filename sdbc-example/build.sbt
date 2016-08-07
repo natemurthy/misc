@@ -2,7 +2,7 @@ name := "sdbc-example"
 
 version := "0.1-SNAPSHOT"
 
-scalaVersion in ThisBuild := "2.11.6"
+scalaVersion in ThisBuild := "2.11.8"
 
 libraryDependencies ++= Seq(
   "com.jsuereth" %% "scala-arm"       % "1.4",
