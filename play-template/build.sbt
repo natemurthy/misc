@@ -8,7 +8,17 @@ lazy val commonSettings = Seq(
   scalaVersion in ThisBuild := "2.11.8",
   organization in ThisBuild := "natemurthy",
 
-  // depenencies
+  // test settings
+  parallelExecution in Test := false,
+        javaOptions in Test ++= Seq(
+          "-Dconfig.file=conf/application.test.conf",
+          "-Dlogger.file=conf/logback-test.xml"
+        ),
+  coverageExcludedPackages := """controllers.docs;controllers\..*Reverse.*;router.Routes.*;""" +
+    "pl.matisoft.swagger; pl.matisoft.swagger.javascript; views.html",
+    
+  // classpaths and dependencies
+  scriptClasspath := Seq("../conf/","*"),
   libraryDependencies ++= Seq(
     "org.scalatest"    %% "scalatest" % scalaTestVersion % "test"
   )
