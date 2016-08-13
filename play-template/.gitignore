@@ -1,0 +1,11 @@
+.idea/
+.eclipse
+logs/
+target/
+project/project
+project/target
+.DS_store
+server.pid
+*.iml
+*.eml
+application.dev.conf
