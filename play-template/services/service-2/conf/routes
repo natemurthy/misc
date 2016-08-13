@@ -1,3 +1,0 @@
-# Service Two API
-
-GET  /ping     controllers.ServiceTwoApi.ping

@@ -6,10 +6,10 @@ import play.api.mvc._
 
 
 @Singleton
-class ServiceOneApi @Inject() extends Controller {
+class ServiceB @Inject() extends Controller {
 
   def ping = Action {
-    Ok("Service One API: pong")
+    Ok("Service B: pong")
   }
 
 }

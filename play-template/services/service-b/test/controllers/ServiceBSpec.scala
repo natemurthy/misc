@@ -5,9 +5,9 @@ import play.api.test._
 import play.api.test.Helpers._
 import test.mixins.FlatSpecWithFakeApp
 
-class ServiceTwoApiSpec extends FlatSpecWithFakeApp with Matchers {
+class ServiceBSpec extends FlatSpecWithFakeApp with Matchers {
 
-  "Service Two API" should "have a /ping endpoint" in {
+  "Service B" should "have a /ping endpoint" in {
      val result = route(FakeRequest(GET, "/ping")).get
      status(result) shouldBe OK
    }

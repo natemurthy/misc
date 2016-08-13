@@ -26,12 +26,12 @@ lazy val commonSettings = Seq(
 
 lazy val common = (project in file("common")).settings(commonSettings)
 
-lazy val `service-1` = (project in file("services/service-1"))
+lazy val `service-a` = (project in file("services/service-a"))
                          .enablePlugins(PlayScala)
                          .dependsOn(common)
                          .settings(commonSettings)
 
-lazy val `service-2` = (project in file("services/service-2"))
+lazy val `service-b` = (project in file("services/service-b"))
                          .enablePlugins(PlayScala)
                          .dependsOn(common)
                          .settings(commonSettings)

@@ -1,3 +1,0 @@
-# Service One API
-
-GET  /ping     controllers.ServiceOneApi.ping
