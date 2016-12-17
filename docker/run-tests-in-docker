@@ -1,0 +1,13 @@
+PROJECT_DIR="$(cd "`dirname $0`"/..; pwd)"
+cd $PROJECT_DIR
+
+# Give test harness a unique ID so that it does not interfere
+# with other integration tests running on the same machine
+export TEST_ID=$(dd if=/dev/random bs=2 count=1 2>/dev/null | od -An -tx1 | tr -d ' \t\n')
+
+docker network create app_test_$TEST_ID
+docker-compose -f docker-compose.test.yml -p app up --abort-on-container-exit
+docker-compose -f docker-compose.test.yml -p app down --rmi all
+docker network rm app_test_$TEST_ID
+
+unset TEST_ID
