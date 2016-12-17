@@ -1,0 +1,23 @@
+version: '2'
+services:
+  service0:
+    container_name: play_app
+    build:
+      context: .
+      dockerfile: Dockerfile.service0
+    volumes:
+     - ~/.ivy2:/root/.ivy2
+     - ~/.sbt:/root/.sbt2
+    ports:
+     - "9000:9000"
+    stdin_open: true
+  nginx_proxy:
+    container_name: play_app
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    ports:
+     - "80:80"
+     - "443:443"
+    links:
+     - service0:service0

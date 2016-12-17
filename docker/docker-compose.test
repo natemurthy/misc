@@ -1,0 +1,29 @@
+version: '2'
+services:
+  app:
+    container_name: app_${TEST_ID}
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+     - .:/app
+     - ./target:/app/target
+     - ~/.ivy2:/root/.ivy2
+     - ~/.sbt:/root/.sbt2
+    depends_on:
+     - postgres
+     - rabbitmq
+  postgres:
+    container_name: postgres_${TEST_ID}
+    build:
+      context: ./dev/containers/postgres
+      dockerfile: Dockerfile
+  rabbitmq:
+      container_name: rabbitmq_${TEST_ID}
+      build:
+        context: ./dev/containers/rabbitmq
+        dockerfile: Dockerfile
+networks:
+  default:
+    external:
+      name: app_test_${TEST_ID}
