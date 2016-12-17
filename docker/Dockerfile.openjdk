@@ -1,0 +1,16 @@
+FROM openjdk:8-jdk
+
+COPY . /app
+WORKDIR /app
+
+# Remove target folders
+RUN rm -rf /app/project/project/target && \
+    rm -rf /app/project/target && \
+    rm -rf /app/target && \
+
+# Download SBT into container
+RUN eval $(sed s/sbt.version/SBT_VERSION/ < /app/project/build.properties) && \
+    mkdir -p /usr/local/bin && \
+    wget -P /usr/local/bin/ https://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/$SBT_VERSION/sbt-launch.jar && \
+    cp /app/project/sbt /usr/local/bin && \
+    chmod +x /usr/local/bin/sbt
