@@ -7,4 +7,5 @@ RUN apt-get update &&  \
       curl             \
       iputils-ping     \
       net-tools        \
+      dnsutils         \
       python
