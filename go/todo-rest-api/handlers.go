@@ -11,6 +11,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type jsonErr struct {
+	Message string `json:"message"`
+}
+
 // Index prints welcome page
 func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Welcome!\n")
@@ -30,18 +34,17 @@ func TodoShow(w http.ResponseWriter, r *http.Request) {
 	var err error
 	if todoID, err = strconv.Atoi(vars["todoId"]); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(jsonErr{Message: "Todo.ID must be an integer"})
 		return
 	}
-	todo := RepoFindTodo(todoID)
-	if todo.ID > 0 {
+	if todo, present := RepoFindTodo(todoID); present {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(todo)
 	} else {
-		// If we didn't find it, 404
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"})
+		json.NewEncoder(w).Encode(jsonErr{Message: "Not Found"})
 	}
 }
 
@@ -51,6 +54,7 @@ func TodoCreate(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(jsonErr{Message: "Request body too large (>1MB)"})
 		return
 	}
 	if err := r.Body.Close(); err != nil {
@@ -58,6 +62,7 @@ func TodoCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.Unmarshal(body, &todo); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(jsonErr{Message: "Unable to parse JSON"})
 		return
 	}
 
@@ -76,11 +81,12 @@ func TodoDelete(w http.ResponseWriter, r *http.Request) {
 	var err error
 	if todoID, err = strconv.Atoi(vars["todoId"]); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(jsonErr{Message: "Todo.ID must be an integer"})
 		return
 	}
 	if err := RepoDestroyTodo(todoID); err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: err.Error()})
+		json.NewEncoder(w).Encode(jsonErr{Message: err.Error()})
 	} else {
 		w.WriteHeader(http.StatusNoContent)
 	}
