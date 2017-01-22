@@ -26,3 +26,18 @@ threads/java$ java par
 1.76154E-4
 ```
 
+C
+```
+threads/c$ ./seq
+179148114 nanoseconds
+threads/c$ ./par
+89793314 nanoseconds
+```
+
+Go
+```
+threads/go$ go run seq.go
+33.631265ms
+threads/go$ go run par.go
+21.702691ms
+```
