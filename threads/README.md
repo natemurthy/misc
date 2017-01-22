@@ -21,17 +21,17 @@ threads/csharp$ mono Par.exe
 Java
 ```
 threads/java$ java seq
-0.004831534
+elapsed time = 4698598 nanoseconds
 threads/java$ java par
-1.76154E-4
+elapsed time = 146954 nanoseconds
 ```
 
 C
 ```
 threads/c$ ./seq
-179148114 nanoseconds
+elapsed time = 179148114 nanoseconds
 threads/c$ ./par
-89793314 nanoseconds
+elapsed time = 89793314 nanoseconds
 ```
 
 Go
