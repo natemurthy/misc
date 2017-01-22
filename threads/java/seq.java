@@ -7,8 +7,8 @@ public class seq {
     public static void main(String [] args) {
         final int COUNT = 80000000;
         long start = System.nanoTime();
-		countdown(COUNT);
+	countdown(COUNT);
         long end = System.nanoTime();
-        System.out.println((end-start)/1.0e9);
+        System.out.println("elapsed time = " + (end-start) + " nanoseconds");
     }
 }

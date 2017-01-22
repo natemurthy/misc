@@ -1,7 +1,8 @@
 public class par {
 
     static void countdown(int n) {
-    	while (n > 0) { n-=1; }
+    	while (n > 0) { n -= 1; }
+	//System.out.println(n);
     }
 	
     public static void main(String [] args) {
@@ -16,6 +17,6 @@ public class par {
         t1.start(); t2.start();
         //try { t1.join(); t2.join(); } catch (InterruptedException e) { System.out.println(e); }
         long end = System.nanoTime();
-        System.out.println((end-start)/1.0e9);
+        System.out.println("elapsed time = " + (end-start) + " nanoseconds");
     }
 }
