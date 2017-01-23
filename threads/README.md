@@ -37,7 +37,7 @@ elapsed time = 89793314 nanoseconds
 Go
 ```
 threads/go$ go run seq.go
-33.631265ms
+34.92398ms
 threads/go$ go run par.go
-21.702691ms
+15.952245ms
 ```
