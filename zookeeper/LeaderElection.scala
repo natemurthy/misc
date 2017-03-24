@@ -40,4 +40,9 @@ latch.addListener(listener, serialExecutor)
 latch.start()
 
 println(s"myId = ${myId}")
-new Thread { override def run() = Thread.sleep(Long.MaxValue) }.start
+new Thread {
+  override def run() = {
+    var tick = 0
+    while(true) { println(tick); Thread.sleep(1000); tick += 1 }
+  }
+}.start
