@@ -9,6 +9,7 @@ import (
     "github.com/stretchr/testify/assert"
 )
 
+// see http://stackoverflow.com/questions/34435185/unit-testing-for-functions-that-use-gorilla-mux-url-parameters
 func TestGetRequest(t *testing.T) {
 
     r, _ := http.NewRequest("GET", "/test/abcd", nil)
