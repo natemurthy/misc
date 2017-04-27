@@ -16,6 +16,10 @@ func TestGetRequest(t *testing.T) {
 
     NewRouter().ServeHTTP(w, r)
 
+    var resp JsValue
+    json.Unmarshal(w.Body.Bytes(), &resp)
+    expect := JsValue{Message: "abcd"}
+
     assert.Equal(t, http.StatusOK, w.Code)
-    assert.Equal(t, []byte("abcd"), w.Body.Bytes())
+    assert.Equal(t, expect,        resp  )
 }
