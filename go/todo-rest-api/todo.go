@@ -10,5 +10,13 @@ type Todo struct {
 	Due       time.Time `json:"due"`
 }
 
-// Todos is an array of todo structs
-type Todos []Todo
+// Todos is a map of todo structs
+type Todos map[int]Todo
+
+func (todos Todos) Values() []Todo {
+	values := []Todo{}
+	for _, v := range todos {
+		values = append(values, v)
+	}
+	return values
+}
