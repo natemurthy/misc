@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 var currentID chan int
-var todos map[int]Todo
+var todos Todos
 
 // Give us some seed data
 func init() {
