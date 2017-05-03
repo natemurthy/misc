@@ -24,7 +24,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func TodoIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(todos)
+	json.NewEncoder(w).Encode(todos.Values())
 }
 
 // TodoShow gets individual todo record by ID from repo
