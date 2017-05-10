@@ -10,7 +10,7 @@ import (
     "github.com/stretchr/testify/assert"
 )
 
-func TestGetRequest(t *testing.T) {
+func TestGetTodos(t *testing.T) {
     r, _ := http.NewRequest("GET", "/todos", nil)
     w := httptest.NewRecorder()
     NewRouter().ServeHTTP(w, r)
