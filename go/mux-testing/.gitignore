@@ -1,3 +1,4 @@
 bin/
 pkg/
-mux-testing
+coverage.out
+api_example
