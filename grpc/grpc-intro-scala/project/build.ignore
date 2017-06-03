@@ -1,0 +1,53 @@
+import java.nio.file.Files
+
+import sbt._
+import Keys._
+import com.trueaccord.scalapb.{ScalaPbPlugin => PB}
+import spray.revolver.RevolverPlugin.Revolver
+import bintray.BintrayKeys._
+import sbtassembly.AssemblyKeys._
+import sbtassembly._
+
+object FortuneServiceBuild extends Build {
+  lazy val commonSettings = Seq(
+    organization := "com.bigcommerce",
+    version := "0.1.0",
+    scalaVersion := "2.11.12",
+    resolvers ++= Seq(Resolver.bintrayRepo("readytalk", "maven"))
+  )
+
+  lazy val grpcDependencies = Seq(
+    "com.google.protobuf" % "protobuf-java" % "3.0.0" % PB.protobufConfig.name,
+    "io.netty" % "netty-tcnative-boringssl-static" % "1.1.33.Fork14" classifier sslClassifier
+  ).map(_.excludeAll(ExclusionRule(organization = "commons-logging")))
+
+  lazy val interfaces =
+    (project in file("interfaces"))
+      .settings(commonSettings)
+      .settings(watchSources ++= ((baseDirectory.value / "src" / "main" / "protobuf") ** "*.proto").get)
+      .settings(PB.protobufSettings: _*)
+      .settings(libraryDependencies ++= grpcDependencies)
+      .settings(PB.flatPackage in PB.protobufConfig := true)
+      .settings(PB.grpc := true)
+      .settings(PB.scalapbVersion := SCALA_PB_VERSION)
+      .settings(PB.runProtoc in PB.protobufConfig := (args =>
+        com.github.os72.protocjar.Protoc.runProtoc(args.toArray)))
+
+  lazy val root = Project(id = "fortune", base = file("."))
+    .settings(commonSettings: _*)
+    .settings(libraryDependencies ++= Seq(
+      "com.bigcommerce" %% "scala-core" % SCALA_CORE_VERSION  excludeAll(
+        ExclusionRule(organization = "commons-logging")
+        ),
+      "org.scalatest"   %% "scalatest"  % "2.2.4" % "test"
+    ))
+    .settings(
+      aggregate in assembly := false,
+      assemblyJarName := "fortune-service.jar",
+      mainClass in assembly := Some("com.bigcommerce.fortune.Boot")
+    )
+    .settings(Revolver.settings)
+    .dependsOn(interfaces)
+    .aggregate(interfaces)
+
+}

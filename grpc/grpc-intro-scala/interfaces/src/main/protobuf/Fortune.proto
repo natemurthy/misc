@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+//java/scala package to put generated classes
+option java_package = "com.bigcommerce.fortune";
+
+service FortuneCookie {
+    rpc NextFortunes(NextFortuneReq) returns (NextFortuneResp);
+    rpc FortunePerSecond(FortunePerSecReq) returns (stream FortunePerSecResp);
+}
+
+message FortunePerSecReq {}
+
+message FortunePerSecResp {
+    string fortune = 1;
+}
+
+message NextFortuneReq {
+    int32 num_fortunes = 1;
+}
+
+message NextFortuneResp {
+    repeated string fortunes = 1;
+}
