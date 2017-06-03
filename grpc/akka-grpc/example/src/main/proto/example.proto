@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package de.heikoseeberger.akkagrpc;
+
+service ExampleService {
+  rpc ExampleCall (stream ExampleRequest) returns (stream ExampleResponse) {}
+}
+
+message ExampleRequest {
+  string message = 1;
+}
+
+message ExampleResponse {
+  string message = 1;
+}
