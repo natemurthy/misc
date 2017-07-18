@@ -16,7 +16,7 @@ func main() {
 	fmt.Println(now + 1000000000)
 	
 	//render
-        dtStr := now.Format(time.RFC3339)
+        dtStr := time.Now().UTC().Format(time.RFC3339)
         fmt.Println(dtStr)
 
         //parse
