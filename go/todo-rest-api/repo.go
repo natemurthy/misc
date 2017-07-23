@@ -1,14 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"sync/atomic"
+)
 
-var currentID chan int
-var todos Todos
+var (
+	currentID uint32
+	todos     Todos
+)
 
 // Give us some seed data
 func init() {
-	currentID = make(chan int, 1)
-	currentID <- 0
+	currentID = 0
 	todos = make(map[int]Todo)
 	RepoCreateTodo(Todo{Name: "Write presentation", Completed: true})
 	RepoCreateTodo(Todo{Name: "Host meetup", Completed: true})
@@ -22,10 +26,9 @@ func RepoFindTodo(id int) (Todo, bool) {
 
 // RepoCreateTodo creates and returns a new todo record
 func RepoCreateTodo(t Todo) Todo {
-	currID := <-currentID
-	currID++
+	atomic.AddUint32(&currentID, 1)
+	currID := int(atomic.LoadUint32(&currentID))
 	t.ID = currID
-	currentID <- currID
 	todos[currID] = t
 	return t
 }
