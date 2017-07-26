@@ -1,6 +1,8 @@
 ## Thread experiments
 
-In each example we countdown from 80 million by 1 in a single-threaded and multithreaded manner, respectively, and measure the elapsed time for each case. These tests were compiled and executed on an Asus Zenbook UX31A, Intel Core i7 3517U 1.9 GHz dual core with hyperthreading, 4 GB RAM, running Ubuntu 12.04 Desktop.
+In each example we countdown from 80 million by 1 in a single-threaded (seq) and multithreaded (par) manner, respectively, and measure the elapsed time for each case. These tests were compiled and executed on an Asus Zenbook UX31A, Intel Core i7 3517U 1.9 GHz dual core with hyperthreading, 4 GB RAM, running Ubuntu 12.04 Desktop.
+
+*Note: example in C using GNU compiler without optimizations for unused counters*
 
 Python
 ```
@@ -26,7 +28,7 @@ threads/java$ java par
 elapsed time = 146954 nanoseconds
 ```
 
-C *(unoptimized compilation with gcc)*
+C
 ```
 threads/c$ ./seq
 elapsed time = 179148114 nanoseconds
