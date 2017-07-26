@@ -26,7 +26,7 @@ threads/java$ java par
 elapsed time = 146954 nanoseconds
 ```
 
-C
+C *(unoptimized compilation with gcc)*
 ```
 threads/c$ ./seq
 elapsed time = 179148114 nanoseconds
