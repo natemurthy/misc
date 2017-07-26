@@ -9,9 +9,9 @@ In each example we countdown from 80 million by 1 in a single-threaded (seq) and
 Python
 ```
 threads/python$ python seq.py
-3.46064090729
+3.46064090729 sec
 threads/python$ python par.py
-5.86907505989
+5.86907505989 sec
 ```
 
 C#
