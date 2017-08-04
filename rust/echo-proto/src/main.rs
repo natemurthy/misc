@@ -4,6 +4,10 @@ extern crate tokio_io;
 extern crate tokio_proto;
 extern crate tokio_service;
 
+
+/**
+ * LineCodec implementation
+ */
 use std::io;
 use std::str;
 use bytes::BytesMut;
@@ -46,12 +50,15 @@ impl Encoder for LineCodec {
     }
 }
 
+
+/**
+ * LineProto implementation
+ */
 use tokio_proto::pipeline::ServerProto;
-
-pub struct LineProto;
-
 use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_io::codec::Framed;
+
+pub struct LineProto;
 
 impl<T: AsyncRead + AsyncWrite + 'static> ServerProto<T> for LineProto {
     /// For this protocol style, `Request` matches the `Item` type of the codec's `Encoder`
@@ -68,11 +75,14 @@ impl<T: AsyncRead + AsyncWrite + 'static> ServerProto<T> for LineProto {
     }
 }
 
+
+/**
+ * Echo implementation
+ */
 use tokio_service::Service;
+use futures::{future, Future, BoxFuture};
 
 pub struct Echo;
-
-use futures::{future, Future, BoxFuture};
 
 impl Service for Echo {
     // These types must match the corresponding protocol types:
@@ -92,6 +102,12 @@ impl Service for Echo {
     }
 }
 
+
+/**
+ * Create TcpServer using LineProto implementation above
+ * connect with telnet:
+ *  $ telnet localhost 12345
+ */
 use tokio_proto::TcpServer;
 
 fn main() {
