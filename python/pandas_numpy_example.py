@@ -10,3 +10,4 @@ N = 10
 df = pd.DataFrame(np.random.randn(N, 4), columns=list('ABCD'))
 start = dt.datetime(2017, 1, 1)
 arr = np.array([start + dt.timedelta(hours=i) for i in xrange(N)])
+df = df.set_index(arr)
