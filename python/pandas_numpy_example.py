@@ -8,5 +8,5 @@ import datetime as dt
 
 N = 10
 df = pd.DataFrame(np.random.randn(N, 4), columns=list('ABCD'))
-start = datetime.datetime(2017, 1, 1)
-arr = np.array([start + datetime.timedelta(hours=i) for i in xrange(N)])
+start = dt.datetime(2017, 1, 1)
+arr = np.array([start + dt.timedelta(hours=i) for i in xrange(N)])
