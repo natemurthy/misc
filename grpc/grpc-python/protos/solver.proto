@@ -1,0 +1,16 @@
+syntax="proto3";
+
+service Solver {
+  rpc SolveQuadratic(SolverRequest) returns (SolverResponse) {}
+}
+
+message SolverRequest {
+  float a = 1;
+  float b = 2;
+  float c = 3;
+}
+
+message SolverResponse {
+  float x = 1;
+  float y = 2;
+}
