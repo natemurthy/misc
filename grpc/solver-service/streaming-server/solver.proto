@@ -1,0 +1,22 @@
+syntax="proto3";
+
+package solver;
+
+service Solver {
+  rpc SolveQuadratic(SolverRequest) returns (SolverResponse) {}
+  rpc SolveNewton(SolverRequest) returns (stream SolverResponse) {}
+}
+
+message SolverRequest {
+  repeated double polynomial = 1;
+  double initial_guess = 2;
+}
+
+message SolverResponse {
+  string solver_message = 1;
+  Solution solution = 2;
+  message Solution {
+    double x = 1;
+    double y = 2;
+  }
+}
