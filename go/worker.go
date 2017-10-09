@@ -27,13 +27,13 @@ func (w *Worker) LoopUntilDone(deadline time.Duration) {
 	s := 0
 	fmt.Printf("[%s] Initial state: %d, Desired state: %d\n", w.ID, s, w.DoneState)
 	wait := time.After(deadline)
+	tick := time.Tick(500 * time.Millisecond)
 	for {
 		select {
 		case <-wait:
 			fmt.Printf("[%s] Worker did not finish within deadline\n", w.ID)
 			return
-		default:
-			time.Sleep(500 * time.Millisecond)
+		case <-tick:
 			if s == w.DoneState {
 				fmt.Printf("[%s] Done! Final state: %d\n", w.ID, s)
 				return
