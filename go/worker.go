@@ -51,7 +51,7 @@ func StartServer() {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		worker := Worker{ID: randStringBytes(5), DoneState: rand.Intn(10)}
 		go worker.LoopUntilDone(4 * time.Second)
-		w.Write([]byte(`Created new worker`))
+		w.Write([]byte(fmt.Sprintf("Created new worker %s", worker.ID)))
 	}
 	http.HandleFunc("/start", handler)
 	http.ListenAndServe(":8080", nil)
