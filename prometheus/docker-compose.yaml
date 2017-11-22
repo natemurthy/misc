@@ -1,0 +1,39 @@
+version: '3'
+services:
+  app:
+      image: py-metrics:latest
+      ports:
+          - 8081:8081
+      depends_on:
+          - telegraf
+      links:
+          - telegraf:telegraf
+
+  telegraf:
+      image: telegraf:alpine
+      depends_on:
+          - influxdb
+      links:
+          - influxdb:influxdb
+      environment:
+          HOST_NAME: "telegraf"
+          INFLUXDB_HOST: "influxdb"
+          INFLUXDB_PORT: "8086"
+          DATABASE: "telegraf"
+      tty: true
+      volumes:
+          - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+          - /var/run/docker.sock:/var/run/docker.sock
+      privileged: true
+
+  influxdb:
+      image: influxdb:alpine
+      ports:
+          - 8083:8083
+          - 8086:8086
+      environment:
+          INFLUX_DATABASE: "telegraf"
+          INLFUX_ADMIN_USER: "user"
+          INFLUX_ADMIN_PASS: "pass"
+
+
