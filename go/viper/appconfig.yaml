@@ -1,0 +1,5 @@
+database:
+  host: rds.us-west-2.rds.amazonaws.com
+  dbname: my_dbname
+  username: my_user
+  password: $POSTGRES_PASSWORD
