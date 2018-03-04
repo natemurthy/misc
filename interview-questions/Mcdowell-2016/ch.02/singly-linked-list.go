@@ -24,7 +24,7 @@ func (l *LinkedList) Insert(n *Node) {
 	l.length++
 }
 
-// AppendToTail of this list
+// AppendToTail of this list (this is broken)
 func (l *LinkedList) AppendToTail(end *Node) {
 	if l.root == nil {
 		l.root = end
