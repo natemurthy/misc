@@ -61,12 +61,9 @@ func main() {
 			_ = c1.Run()
 			_ = c2.Wait()
 		}
-
 	}()
 
-	for {
-		if err := play(f); err != nil {
-			log.Fatal(err)
-		}
+	if err := play(f); err != nil {
+		log.Fatal(err)
 	}
 }
