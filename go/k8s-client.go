@@ -30,23 +30,30 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
+	// Uncomment the following line to load the gcp plugin (only required to
+	// authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 var (
-	pod = flag.String("pod", "none", "pod name")
+	pod        = flag.String("pod", "none", "pod name")
+	kubeconfig *string
 )
 
-func main() {
-	var kubeconfig *string
+func init() {
 	if home := homeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		kubeconfig = flag.String(
+			"kubeconfig",
+			filepath.Join(home, ".kube", "config"),
+			"(optional) absolute path to the kubeconfig file")
 	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		kubeconfig = flag.String(
+			"kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 	flag.Parse()
+}
 
+func main() {
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
@@ -67,7 +74,8 @@ func main() {
 
 		// Examples for error handling:
 		// - Use helper functions like e.g. errors.IsNotFound()
-		// - And/or cast to StatusError and use its properties like e.g. ErrStatus.Message
+		// - And/or cast to StatusError and use its properties
+		// like e.g. ErrStatus.Message
 		namespace := "default"
 		res, err := clientset.CoreV1().Pods(namespace).Get(*pod, metav1.GetOptions{})
 		if errors.IsNotFound(err) {
