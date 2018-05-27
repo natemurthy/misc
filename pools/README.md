@@ -11,7 +11,7 @@ pools/python$ time python3 multiproc_pool.py 50000
 
 real	0m12.893s
 user	0m42.522s
-sys	    0m0.310s
+sys	  0m0.310s
 ```
 
 concurrent.futures
@@ -21,7 +21,7 @@ pools/python$ time python3 futures_pool.py 50000
 
 real	0m33.310s
 user	1m9.373s
-sys	    0m10.066s
+sys	  0m10.066s
 ```
 
 java.util.concurrent
@@ -31,6 +31,5 @@ pools/java$ time scala JavaPool 50000
 
 real	0m2.529s
 user	0m7.128s
-sys	    0m0.391s
-
+sys	  0m0.391s
 ```
