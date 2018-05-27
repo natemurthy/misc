@@ -62,3 +62,6 @@ print arr == [1,1,1,0,0,0]
 arr = [0,1,0,1,0,1,0]
 print move_zeros_to_tail_and_count_nonzeros(arr)  == 3
 print arr == [1,1,1,0,0,0,0]
+
+# Another solution:
+# https://www.geeksforgeeks.org/move-zeroes-end-array/
