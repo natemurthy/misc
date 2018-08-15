@@ -1,0 +1,11 @@
+FROM tensorflow/tensorflow:latest-devel
+
+ENV TF_TYPE="cpu"
+ENV OS="linux"
+ENV TARGET_DIRECTORY="/usr/local"
+
+RUN curl -L https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-${TF_TYPE}-${OS}-x86_64-1.8.0.tar.gz | tar -C $TARGET_DIRECTORY -xz
+
+RUN ldconfig
+
+ENV LD_LIBRARY_PATH="/usr/local/lib"
