@@ -1,0 +1,11 @@
+.idea
+project/target
+project/project
+target
+*.log
+logs/
+*.DS_Store
+env/dev-local.env
+env/dev-local.sh
+env/eng-local.sh
+test-reports/
