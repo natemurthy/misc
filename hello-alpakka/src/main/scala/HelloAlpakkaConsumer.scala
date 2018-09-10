@@ -3,7 +3,9 @@ import akka.kafka.{ConsumerSettings, Subscriptions}
 import akka.kafka.scaladsl.Consumer
 import akka.stream.scaladsl.{Keep, Sink}
 import akka.stream.{ActorMaterializer, Materializer}
+import com.typesafe.config.{ConfigFactory,ConfigValueFactory}
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Failure, Success}
@@ -14,31 +16,33 @@ import scala.util.{Failure, Success}
   */
 object HelloAlpakkaConsumer extends App {
 
-  println("Hello from Alpakka")
+  private[this] val log = LoggerFactory.getLogger(getClass.getName.stripSuffix("$"))
+  private[this] val config = ConfigFactory.load()
+  private[this] val topic = config.getString("akka.kafka.consumer.kafka-clients.topic")
+
+  log.info("Hello from Alpakka")
 
   implicit val system: ActorSystem = ActorSystem("hello-alpakka")
+  implicit val ec: ExecutionContextExecutor = system.dispatcher
   implicit val materializer: Materializer = ActorMaterializer()
 
-  val consumerSettings =
-    ConsumerSettings(system, new StringDeserializer, new StringDeserializer)
-      .withBootstrapServers(args.head)
+  val settings = ConsumerSettings(system, new StringDeserializer, new StringDeserializer)
 
   val consumer = Consumer
-    .plainSource(consumerSettings, Subscriptions.topics("streams-plaintext-input"))
+    .plainSource(settings, Subscriptions.topics(topic))
     .toMat(Sink.foreach(r => println(r.value)))(Keep.both)
     .mapMaterializedValue(Consumer.DrainingControl.apply)
     .run()
 
   sys.addShutdownHook({
-    println("Shutdown requested...")
+    log.info("Shutdown requested...")
 
     val done = consumer.shutdown()
 
-    implicit val ec: ExecutionContextExecutor = system.dispatcher
     done
       .onComplete {
-        case Success(_) => println("Done"); system.terminate()
-        case Failure(err) => println(err.toString); system.terminate()
+        case Success(_) => log.info("Done"); system.terminate()
+        case Failure(err) => log.error(err.toString); system.terminate()
       }
   })
 
