@@ -2,13 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
-	"net/http"
-	_ "net/http/pprof"
-	"time"
 
+	"gonum.org/v1/gonum/lapack/lapack64"
 	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/netlib/lapack/netlib"
 )
 
 func randMat(d int) mat.Matrix {
@@ -33,18 +31,19 @@ func isPosDef(x mat.Matrix) bool {
 }
 
 func main() {
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
+	lapack64.Use(netlib.Implementation{})
 
-	a := randMat(1000)
-	//a := mat.NewDense(3, 3, []float64{
-	//2, -1, 0,
-	//-1, 2, -1,
-	//0, -1, 2,
-	//})
+	//wg := new(sync.WaitGroup)
 
-	fmt.Println(isPosDef(a))
+	for i := 0; i < 4; i++ {
+		//wg.Add(1)
+		//go func() {
+		//defer wg.Done()
+		a := randMat(1000)
+		fmt.Println(isPosDef(a))
+		//}()
+	}
 
-	time.Sleep(5 * time.Minute)
+	//wg.Wait()
+
 }
