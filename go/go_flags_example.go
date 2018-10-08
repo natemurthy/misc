@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	flags "github.com/jessevdk/go-flags"
 	"github.com/k0kubun/pp"
+	flags "github.com/samv/go-flags"
 )
 
 // Config defines all env vars and flags
