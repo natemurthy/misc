@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+message Pong {
+  bool healthy = 1;
+}
+
+service Ping {
+  rpc Ping(google.protobuf.Empty) returns (Pong);
+}
