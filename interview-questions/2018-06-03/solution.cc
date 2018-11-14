@@ -10,7 +10,7 @@ using namespace std;
 
 bool HasPairWithSum(const vector<int>& data, int sum)
 {
-        unordered_set<int> comp; // complements
+        unordered_set<int> comp; // additive complements
         for (int value : data) 
         {
                 if (comp.find(value) != comp.end()) return true;
