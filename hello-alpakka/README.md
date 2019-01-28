@@ -16,4 +16,4 @@ BROKER_URLS="broker1:9092,broker2:9092" TOPIC="streams-plaintext-input" GROUP_ID
 scala target/scala-2.12/hello-alpakka-assembly-0.1.jar
 ```
 
-where the BROKER_URLS env variable is a comman-sparated listed of broker locations.
+where the BROKER_URLS env variable is a comma-separated list of broker locations.
