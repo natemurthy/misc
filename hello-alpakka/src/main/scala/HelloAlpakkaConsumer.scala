@@ -3,7 +3,7 @@ import akka.kafka.{ConsumerSettings, Subscriptions}
 import akka.kafka.scaladsl.Consumer
 import akka.stream.scaladsl.{Keep, Sink}
 import akka.stream.{ActorMaterializer, Materializer}
-import com.typesafe.config.{ConfigFactory,ConfigValueFactory}
+import com.typesafe.config.ConfigFactory
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 
