@@ -1,0 +1,3 @@
+p, group1.domain.com, topic1, read
+p, group2.domain.com, topic2, write
+p, *.domain.com, topic3, read
