@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hello-pubsub-world
+  namespace: pubsub-app
+spec:
+  template:
+    spec:
+      volumes:
+        # Make the 'pubsub-credentials' secret available as volume
+        # 'google-cloud-key'.
+        - name: google-cloud-key
+          secret:
+            secretName: pubsub-credentials
+      restartPolicy: OnFailure
+      containers:
+        - name: hello-pubsub-world
+          image: gcr.io/gcp-services/samples/hello-pubsub-world
+          volumeMounts:
+            # Mount the 'google-cloud-key' volume into the container file
+            # system.
+            - name: google-cloud-key
+              mountPath: /var/secrets/google
+          env:
+            # Pass the path to the private key JSON file from the mounted volume
+            # to the environment variable.
+            - name: "GOOGLE_APPLICATION_CREDENTIALS"
+              value: /var/secrets/google/privateKeyData
+
+            # The two environment variables below come from the 'gcp-pubsub'
+            # secret and, together, point at the Cloud Pub/Sub topic to use.
+            - name: "GOOGLE_CLOUD_PROJECT_ID"
+              valueFrom:
+                secretKeyRef:
+                  # Use the projectId value from the 'gcp-pubsub' secret created
+                  # as a result of binding to the Pub/Sub service instance.
+                  name: gcp-pubsub
+                  key: projectId
+            - name: "GOOGLE_CLOUD_PUBSUB_TOPIC"
+              valueFrom:
+                secretKeyRef:
+                  # Use the topicId value from the 'gcp-pubsub' secret created
+                  # as a result of binding to the Pub/Sub service instance.
+                  name: gcp-pubsub
+                  key: topicId
+
+            # The environment variable below come from the
+            # 'gcp-pubsub-subscription' secret and, together with the
+            # GOOGLE_CLOUD_PROJECT_ID above, point at the Cloud Pub/Sub
+            # subscription to use.
+            - name: "GOOGLE_CLOUD_PUBSUB_SUBSCRIPTION"
+              valueFrom:
+                secretKeyRef:
+                  # Use the subscriptionId value from the
+                  # 'gcp-pubsub-subscription' secret created as a result of the
+                  # subscription binding to the Pub/Sub service instance.
+                  name: gcp-pubsub-subscription
+                  key: subscriptionId
