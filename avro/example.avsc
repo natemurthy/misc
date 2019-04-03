@@ -1,0 +1,18 @@
+{
+  "type" : "record",
+  "name" : "example",
+  "namespace" : "io.github.natemurthy",
+  "fields" : [ {
+    "name" : "timestamp",
+    "type" : "long"
+  }, {
+    "name" : "sig_name",
+    "type" : "string"
+  }, {
+    "name" : "sig_value",
+    "type" : "float"
+  }, {
+    "name" : "tx_id",
+    "type" : [ "null", "int" ]
+  } ]
+}

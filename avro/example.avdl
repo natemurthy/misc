@@ -1,0 +1,9 @@
+@namespace("io.github.natemurthy")
+protocol example {
+        record example {
+                long   timestamp;
+                string sig_name;
+                float  sig_value;
+                union { null, int } tx_id;
+        }
+}
