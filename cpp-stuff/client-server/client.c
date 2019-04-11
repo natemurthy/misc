@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     memset((char *) &serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
 
-    bcopy((char *)server->h_addr, 
+    memcpy((char *)server->h_addr,
         (char *)&serv_addr.sin_addr.s_addr,
         server->h_length);
 
