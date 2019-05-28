@@ -9,8 +9,17 @@ import (
 
 // Config defines all env vars and flags
 type Config struct {
-	Foo          string `env:"FOO" long:"foo" short:"f" description:"you totally don't need this"`
-	KafkaEnabled bool   `env:"KAFKA" long:"enable-kafka" description:"enable logging messages to kafka"`
+	Foo string `
+	env:"FOO"
+	long:"foo"
+	short:"f"
+	description:"you totally don't need this"
+	`
+	KafkaEnabled bool `
+	env:"KAFKA"
+	long:"enable-kafka"
+	description:"enable logging messages to kafka"
+	`
 }
 
 func main() {
