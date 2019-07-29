@@ -9,12 +9,12 @@ import java.util.concurrent.*;
 //
 class SpecialHashMap<K, V> extends ConcurrentHashMap<K,V> {
 
-    private List<K> keys;
+    private Set<V> values;
 
     public SpecialHashMap() {
         super();
         // see https://bigocheatsheet.io/ for selecting
-        keys = new LinkedList<K>();
+        values = new HashSet<V>();
     }
 
     @Override
@@ -24,21 +24,21 @@ class SpecialHashMap<K, V> extends ConcurrentHashMap<K,V> {
 
     @Override
     public V put(K key, V value) {
-        if (!keys.contains(key)) {
-            keys.add(key);
-        }
+        values.add(value);
         return super.put(key, value);
     }
 
     @Override
     public V remove(Object key) {
-        keys.remove(key);
-        return super.remove(key);
+        V v = super.remove(key);
+        values.remove(v);
+        return v;
     }
 
+    @SuppressWarnings("unchecked")
     public V getRandom() {
-        int ix = (int)(Math.random()*keys.size());
-        return super.get(keys.get(ix));
+        int ix = (int)(Math.random()*values.size());
+        return (V)(values.toArray()[ix]);
     }
 }
 
