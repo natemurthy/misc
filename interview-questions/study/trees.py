@@ -4,12 +4,6 @@ class TreeNode(object):
         self.left = left
         self.right = right
 
-class Tree(object):
-    def __init__(self, root):
-        self.root = root
-
-    def inorder(self, t):
-        
 
 def inorder(t):
     if t.left:
