@@ -33,13 +33,13 @@ type fileSystem struct{}
 
 // List is given
 func (fs *fileSystem) List(path string) []string {
-	results, err := ioutil.ReadDir(path)
+	contents, err := ioutil.ReadDir(path)
 	if err != nil {
 		panic(err)
 	}
 
 	var names []string
-	for _, f := range results {
+	for _, f := range contents {
 		names = append(names, f.Name())
 	}
 	return names
