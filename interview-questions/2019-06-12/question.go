@@ -60,8 +60,8 @@ func (fs *fileSystem) Delete(path string) bool {
 }
 
 // DeleteAll is a composition of all the given functions above and
-// should be compared to os.RemoveAll with respect to correctness
-// and performance.
+// whose behavior should be compared to os.RemoveAll with respect
+// to correctness and performance.
 //
 // TODO implement this method
 func (fs *fileSystem) DeleteAll(path string) bool {
