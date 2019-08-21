@@ -63,5 +63,20 @@ arr = [0,1,0,1,0,1,0]
 print move_zeros_to_tail_and_count_nonzeros(arr)  == 3
 print arr == [1,1,1,0,0,0,0]
 
-# Another solution:
+
+# Another solution from:
 # https://www.geeksforgeeks.org/move-zeroes-end-array/
+#
+# Function which pushes all
+# zeros to end of an array.
+def pushZerosToEnd(arr, n):
+    count = 0
+
+    for i in range(n):
+        if arr[i] != 0:
+            arr[count] = arr[i]
+            count+=1
+
+    while count < n:
+        arr[count] = 0
+        count += 1
