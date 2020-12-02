@@ -11,20 +11,20 @@ class Tree:
 
     def bfs(self):
 
-        visit = [(self, 0)]
+        visit = [(0,self)]
         
         levels = dict()
         
         while visit:
-            curr, level = visit.pop(0)
+            level, curr = visit.pop(0)
             if level not in levels:
                 levels[level] = [curr]
             else:
                 levels[level].append(curr)
             if curr.left:
-                visit.append((curr.left, level+1))
+                visit.append((level+1, curr.left))
             if curr.right:
-                visit.append((curr.right, level+1))
+                visit.append((level+1, curr.right))
 
         return levels
 
@@ -43,11 +43,11 @@ class Tree:
 
         in_order(self)
 
-        for _, level in levels.items():
+        for _, nodes in levels.items():
             s = []
             for i in range(len(spacing)):
-                s.append(" ")
-                for n in level:
+                s.append("  ")
+                for n in nodes:
                     if spacing[i] == n.v:
                         s[i] = str(n)
                 
@@ -62,5 +62,5 @@ class Tree:
 '''
 tree = Tree(1, left=Tree(2, left=Tree(6)), right=Tree(3, left=Tree(4), right=Tree(5)))
 
-tree.pretty_print()
-
+#tree.pretty_print()
+print tree.bfs()
