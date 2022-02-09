@@ -20,4 +20,6 @@ class SolutionTest(unittest.TestCase):
                 "mr%20john%20smith")
 
 if __name__ == '__main__':
-    unittest.main()
+    #unittest.main()
+    p="Following the massive, 20,000-person walkout at Google in November, Google got rid of forced arbitration for sexual harassment and sexual assault claims, offering more transparency around those investigations and more."
+    print urlify(p, len(p))
