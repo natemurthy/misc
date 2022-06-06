@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["Your Name <you@example.com>"]
 
 [dependencies]
-hyper = "0.12"
+hyper = "0.14"
