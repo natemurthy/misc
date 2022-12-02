@@ -1,0 +1,12 @@
+// test input array
+
+let test3 = ["unlikely", "unlike", "unlovable", "unlucky", "unified"]
+
+
+     j=0  j=1  j=2   j=3    j=4     j=5      j=6       j=7        j=8         j=9
+
+i=0  ''   'u'  'un'  'unl'  'unli'  'unlik'  'unlike'  'unlikel'  'unlikely'
+i=1  ''   'u'  'un'  'unl'  'unli'  'unlik'  'unlike'
+i=2  ''   'u'  'un'  'unl'  'unlo'  'unlov'  'unlova'  'unlovab'  'unlovabl'  'unlovable'
+i=3  ''   'u'  'un'  'unl'  'unlu'  'unluc'  'unluck'  'unlucky'
+i=4  ''   'u'  'un'  'uni'  'unif'  'unifi'  'unifie'  'unified'
