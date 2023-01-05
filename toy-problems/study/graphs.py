@@ -50,9 +50,9 @@ g.add_edge(2, 5)
 g.add_edge(3, 3)
 g.add_edge(5, 6)
  
-print g.graph
-print ""
+print(g.graph)
+print("")
 
-print g.BFS(2)
-print g.DFS(2)
+print(g.BFS(2))
+print(g.DFS(2))
 
