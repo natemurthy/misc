@@ -6,7 +6,7 @@ naive approach would be two merge the two arrays, but that would cost O(n1+n2)
 and we want O(log(n1+n2)) so maybe we should consider a binary search algorithm
  involving trees?
 
-Consideratoins:
+Considerations:
 https://medium.com/@hazemu/finding-the-median-of-2-sorted-arrays-in-logarithmic-time-1d3f2ecbeb46
 
 "I do not think a problem like this is appropriate for typical 1-hour interview sessions.
