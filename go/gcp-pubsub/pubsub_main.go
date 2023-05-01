@@ -89,7 +89,7 @@ func main() {
 				Data: []byte(fmt.Sprintf("hello world %v", time.Now().UnixNano())),
 			})
 			// check that message was published
-			_, err := r.Get(ctx)
+			_, err := res.Get(ctx)
 			if err != nil {
 				log.Fatal(err)
 			}
