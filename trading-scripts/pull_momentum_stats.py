@@ -7,7 +7,7 @@ import sys
 import yfinance as yf
 
 from dataclasses import dataclass
-from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from tabulate import tabulate
 
 
@@ -54,18 +54,37 @@ def download_yf_data(symbols:list[str], start: str, end: str) ->  pd.DataFrame:
     return df
 
 
+def days_in_window(period: str) -> int:
+    ndays = 20
+    if period.endswith("d"):
+        ndays = int(period[:-1])
+    if period.endswith("w"):
+        ndays = int(period[:-1]) * 5
+    return ndays
+
+
 def calc_sma(df: pd.DataFrame, period: str) -> pd.DataFrame:
     # 200 week SMA (assumes 5 business days in trading week)
-    window = 20
-    if period.endswith("d"):
-        window = int(period[:-1])
-    if period.endswith("w"):
-        window = int(period[:-1]) * 5
+    window = days_in_window(period)
     return df.rolling(window=window).mean()
 
 
 def get_time_frame_low(series: pd.Series) -> float:
     return float(series.min())
+
+
+def get_sma_period_from_task_index() -> str:
+    _, i = util.get_num_workers_and_worker_index()
+    match i:
+        case 0: return "20d"
+        case 1: return "50d"
+        case 2: return "100d"
+        case 3: return "200d"
+        case 4: return "20w"
+        case 5: return "50w"
+        case 6: return "100w"
+        case 7: return "200w"
+        case _: return ""
 
 
 results_stdout = {}
@@ -148,22 +167,25 @@ def get_momentum_stats(
 
 
 def main():
-    print(f"Fetching historical price data for '{sys.argv[1]}' and generating momentum stats...")
+    print(f"info_main: fetching historical price data for '{sys.argv[1]}' and generating momentum stats...")
     symbols = util.get_symbols(sys.argv[1])
-    period = sys.argv[2]
-    start_date = sys.argv[3] # e.g '2024-04-01'
-    end_date = datetime.today().strftime('%Y-%m-%d')
     write_to_db = False
-    if len(sys.argv) > 4:
-        write_to_db = sys.argv[4] == "--dry-run=false"
-    
+    if len(sys.argv) > 2:
+        write_to_db = sys.argv[2] == "--dry-run=false"
+
+    period = get_sma_period_from_task_index()
+    d = days_in_window(period)
+    today = util.today_us_pacific()
+    start_date = (today - relativedelta(days=int(d*1.5))).strftime('%Y-%m-%d')
+    end_date = today.strftime('%Y-%m-%d')
+        
     db_client = db.market_data_db_client()
 
     if write_to_db:
         db_client.connect()
 
     k = len(symbols)
-    print(f"Total symbol count: {k}")
+    print(f"info_main: total symbol count = {k}, sma_period = {period}")
     if k > 1:
         global results_stdout, results_dbwrite
         df = download_yf_data(symbols, start_date, end_date)

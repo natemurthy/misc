@@ -43,36 +43,31 @@ class FcstAnalystPriceTarget(db.TableRowStruct):
             upside_potential=nan,
         )
 
-
-class ResultPair:
-    def __init__(self):
-        self.tipranks: FcstAnalystPriceTarget = FcstAnalystPriceTarget.empty_result("tipranks","")
-        self.yfinance: FcstAnalystPriceTarget = FcstAnalystPriceTarget.empty_result("yfinance", "")
-
-
 def write_rows_to_table(c: db.PostgresClient, data: list[FcstAnalystPriceTarget]) -> None:
     ids_written = c.insert(
         schema_name="timeseries",
         table_name="fcst_analyst_price_target",
         rows=data,
     )
-    print(f"Rows written to database: count={len(ids_written)}, last_row_id={ids_written[-1]}")
+    print("debug_write_rows_to_table:", f"data saved to db (count={len(ids_written)}, last_row_id={ids_written[-1]})")
 
 
-def get_ratings_count_from_html(span_mr2: ResultSet) -> int:
-  try:
-    return int(span_mr2[0].contents[0]) + \
-        int(span_mr2[1].contents[0]) + \
-        int(span_mr2[2].contents[0])
-  except:
-    return 0
+def get_ratings_count_from_html(s: str, span_mr2: ResultSet) -> int:
+    try:
+        return int(span_mr2[0].contents[0]) + \
+            int(span_mr2[1].contents[0]) + \
+            int(span_mr2[2].contents[0])
+    except Exception as ex:
+        print("error_get_ratings_count_from_html:", f"symbol={s.upper()}", f"err={ex}", f"span_mr2={span_mr2}")
+        return 0
 
 
-def get_target_from_html(tr: ResultSet, i: int) -> float:
-  try:
-    return float(tr[0].find_all('td')[i].find_all('span')[1].contents[0].replace("$", "").replace(",", ""))
-  except:
-    return 0.0
+def get_target_from_html(s: str, tr: ResultSet, i: int) -> float:
+    try:
+        return float(tr[0].find_all('td')[i].find_all('span')[1].contents[0].replace("$", "").replace(",", ""))
+    except Exception as ex:
+        print("error_get_target_from_html:", f"symbol={s.upper()}", f"err={ex}", f"tr={tr}")
+        return 0.0
 
 
 def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPriceTarget:
@@ -89,12 +84,18 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
     asset_type = "etf" if s.upper() in const.ETF_SYMBOLS else "stocks"
     url = f"https://www.tipranks.com/{asset_type}/{s.lower()}/forecast"
     res = FcstAnalystPriceTarget.empty_result("tipranks", s.upper())
+    print("debug_fetch_tipranks_estimates:", f"symbol={s.upper()}")
     try:
-        if print_stdout:
-            print(f"Scraping {url}")
-        r = requests.get(url, headers=const.HEADERS)
+        h = util.get_random_user_agent_header()
+        r = requests.get(url, headers=h)
     except Exception as ex:
-        #print("fetch_tipranks_estimates:", ex)
+        print(
+            "error_fetch_tipranks_estimates:",
+            f"symbol='{s.upper()}'",
+            f"err='{ex}'",
+            f"http_resp='{r}'",
+            f"req_header='{h}'",
+        )
         return res
     html_text = r.text
     soup = BeautifulSoup(html_text, 'html.parser')
@@ -105,17 +106,24 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
             if print_stdout:
                 print("TipRanks potential:", potential.replace("(", "").replace(")", ""))
         tr = soup.find_all('tr')
-        k = get_ratings_count_from_html(span_mr2)
+        k = get_ratings_count_from_html(s, span_mr2)
 
         if asset_type == "etf":
             cur = float(soup.find_all("span", {"class": "fontWeightsemibold colorblack"})[21].contents[0].replace("$", "").replace(",", ""))
         if asset_type == "stocks":
             cur = float(soup.find_all("span", {"class": "fontWeightsemibold colorblack"})[22].contents[0].replace("$", "").replace(",", ""))
-        hi = get_target_from_html(tr, 0)
-        avg = get_target_from_html(tr, 2)
-        lo = get_target_from_html(tr, 4)
+        hi = get_target_from_html(s, tr, 0)
+        avg = get_target_from_html(s, tr, 2)
+        lo = get_target_from_html(s, tr, 4)
     except Exception as ex:
-        #print("fetch_tipranks_estimates:",  ex)
+        print(
+            "error_fetch_tipranks_estimates:",
+            f"symbol={s.upper()}",
+            f"err='{ex}'",
+            f"reason='html parsing error'",
+            f"http_resp='{r}'",
+            f"req_header={h}",
+        )
         return res
     if print_stdout:
         print("TipRanks ratings count:", k)
@@ -123,6 +131,10 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
     res.low = lo
     res.high = hi
     res.mean = avg
+    if avg is not None and not np.isnan(avg) and not np.isnan(cur):
+        # for TipRanks upside potential estimates, we divide the mean over the last closing price because
+        # the median is not available
+        res.upside_potential = avg / cur
     return res
 
 
@@ -143,9 +155,13 @@ def fetch_yfinance_estimates(s: str) -> FcstAnalystPriceTarget:
         res.high = t["high"]
         res.mean = t["mean"]
         res.median = t["median"]
+        if res.median is not None and not np.isnan(float(res.median)) and not np.isnan(res.last_closing_price):
+            # for Yahoo Finance upside potential estimates, the formula is slightly different than TipRanks
+            # because the median price estimate IS available. So we divide the median over the last closing
+            # price as more accurate alternate
+            res.upside_potential = res.median / res.last_closing_price
     except Exception as ex:
-        #print(ex)
-        pass
+        print("error_fetch_yfinance_estimates:",f"symbol={s.upper()}",  f"err='{ex}'")
     return res
 
 
@@ -175,12 +191,12 @@ def fetch_analyst_forecasts(s: str, skip_tipranks: bool = False, skip_yfinance: 
 
 
 def main():
-    print(f"Fetching analyst price targets/estimates for '{sys.argv[1]}' (12-month forecast)")
+    print("info_main:", f"fetching analyst price targets/estimates for '{sys.argv[1]}' (12-month forecast)")
     symbols = util.get_symbols(sys.argv[1])
-    skip_tipranks = True
+    source = "yfinance"
     write_to_db = False
     if len(sys.argv) > 2:
-        skip_tipranks = sys.argv[2] != "--skip-tipranks=false"
+        source = sys.argv[2] # yfinance (default) or tipranks
     if len(sys.argv) > 3:
         write_to_db = sys.argv[3] == "--dry-run=false"
 
@@ -190,54 +206,52 @@ def main():
         db_client.connect()
 
     k = len(symbols)
-    print(f"Total symbol count: {k}")
+    print("info_main:", f"total symbol count: {k}")
     if k > 1:
         results_stdout = {}
         results_dbwrite: list[FcstAnalystPriceTarget] = []
-        
-        for i, s in enumerate(symbols):
-            # due to upstream rate limiter on TipRanks, batch 5 requests at a time every minute
-            if not skip_tipranks and i > 4 and i % 5 == 0:
-                if write_to_db:
-                    write_rows_to_table(db_client, results_dbwrite)
-                    results_dbwrite.clear()
-                jitter = random.uniform(0, 10)
-                interval = 60.5 + jitter
-                print(f"Waitng {interval} sec due to TipRanks rate limiter (progress: {i} of {k})")
-                time.sleep(interval)
 
-            estimates = ResultPair()
+        if source == "yfinance":
+            print("info_main:", "pulling analyst price targets from yfinance")
+            for s in symbols:
+                if s not in const.ETF_SYMBOLS:
+                    r = fetch_yfinance_estimates(s)
+                    if not write_to_db:
+                        print(r)
+                    if not np.isnan(r.upside_potential):
+                        results_stdout[f"yfinance:{s}"] = r.upside_potential
+                        results_dbwrite.append(r)
+            if write_to_db:
+                print("info_main:", f"writing yfinance analyst data to db (row_count = {len(results_dbwrite)})")
+                write_rows_to_table(db_client, results_dbwrite)
+                results_dbwrite.clear()
 
-            if not skip_tipranks:
+        if source == "tipranks":
+            print("info_main:", "pulling analyst price targets from tipranks")
+            num_workers, worker_index = util.get_num_workers_and_worker_index()
+            for i in util.get_symbol_ranges_for_worker(worker_index, num_workers, k):
+                # due to upstream rate limiter on TipRanks, batch 5 requests at a time every minute
+                s = symbols[i]
+                if i > 4 and i % 5 == 0:
+                    if write_to_db and len(results_dbwrite) > 0:
+                        print("info_main:", f"writing tipranks analyst data to db (row_count = {len(results_dbwrite)})")
+                        write_rows_to_table(db_client, results_dbwrite)
+                        results_dbwrite.clear()
+                    jitter = random.uniform(0, 10)
+                    interval = 60.5 + jitter
+                    print("info_main:", f"waitng {interval} sec due to tipranks rate limiter")
+                    time.sleep(interval)
+
+                print("info_main:", f"symbol_index = {i}")
                 r = fetch_tipranks_estimates(s, print_stdout=not write_to_db)
-                if r.mean is not None and not np.isnan(r.mean) and not np.isnan(r.last_closing_price):
-                    # for TipRanks upside potential estimates, we divide the mean over the last closing price because
-                    # the median is not available
-                    r.upside_potential = r.mean / r.last_closing_price
-                    results_stdout[s] = r.upside_potential
+                if not write_to_db:
+                    print(r)
+                if not np.isnan(r.upside_potential):
+                    results_stdout[f"tipranks:{s}"] = r.upside_potential
                     results_dbwrite.append(r)
-                    estimates.tipranks = r
 
-            if s not in const.ETF_SYMBOLS:
-                r = fetch_yfinance_estimates(s)
-                if r.median is not None and not np.isnan(float(r.median)) and not np.isnan(r.last_closing_price):
-                    # for Yahoo Finance upside potential estimates, the formula is slightly different than TipRanks
-                    # because the median price estimate IS available. So we divide the median over the last closing
-                    # price as more accurate alternate
-                    r.upside_potential = r.median / r.last_closing_price
-                    results_stdout[s] = r.upside_potential
-                    results_dbwrite.append(r)
-                    estimates.yfinance = r
-
-            if not write_to_db:
-                print(estimates.tipranks)
-                print(estimates.yfinance)
-
-        if len(results_dbwrite) > 0:
+        if write_to_db and len(results_dbwrite) > 0:
             # if there is anything else left in the buffer, flush to the database
-            write_rows_to_table(db_client, results_dbwrite)
-
-        if skip_tipranks and write_to_db:
             write_rows_to_table(db_client, results_dbwrite)
         else:
             sorted_results_stdout = sorted(results_stdout.items(), key=lambda x:x[1], reverse=True)
