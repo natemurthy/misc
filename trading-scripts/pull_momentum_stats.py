@@ -1,3 +1,4 @@
+from pandas.core.ops import flex_method_SERIES
 import db
 import util
 import numpy as np
@@ -18,6 +19,7 @@ class HistMomentumStat(db.TableRowStruct):
     time_frame_low: float
     curr_distance_from_low: float
     last_sma: float
+    last_rsi: float
     momentum_factor: float
 
     @staticmethod
@@ -35,6 +37,7 @@ class HistMomentumStat(db.TableRowStruct):
             time_frame_low=nan,
             curr_distance_from_low=nan,
             last_sma=nan,
+            last_rsi=nan,
             momentum_factor=nan,
         )
 
@@ -64,9 +67,41 @@ def days_in_window(period: str) -> int:
 
 
 def calc_sma(df: pd.DataFrame, period: str) -> pd.DataFrame:
+    """Calculate the simple-moving average (SMA) over a given period
+
+    Args:
+        df: time series of one symbol
+        period: 20, 50, 100, 200 {d,w}
+
+    Returns:
+        tail of the SMA data frame
+    """
     # 200 week SMA (assumes 5 business days in trading week)
     window = days_in_window(period)
-    return df.rolling(window=window).mean()
+    return df.rolling(window=window).mean().tail()
+
+
+def calc_rsi(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate the relative strength index (RSI) of time series, implementation borrowed from
+
+    https://medium.com/@huzaifazahoor654/how-to-calculate-rsi-in-python-a-step-by-step-guide-06b96a2da25e
+
+    Ags:
+        df: timeseries of one symbol
+
+    Returns:
+        tail of RSI data frame
+    """
+    df_copy = df.copy()
+    df_copy['Change'] = df_copy.diff()
+    df_copy['Gain'] = pd.Series(np.where(df_copy['Change'] > 0, df_copy['Change'], 0))
+    df_copy['Loss'] = pd.Series(np.where(df_copy['Change'] < 0, -df_copy['Change'], 0))
+    period = 12 # use 12 (average of 10 days over two business weeks, and 14 days over two calendar weeks)
+    df_copy['Avg Gain'] = df_copy['Gain'].rolling(window=period).mean()
+    df_copy['Avg Loss'] = df_copy['Loss'].rolling(window=period).mean()
+    df_copy['RS'] = df_copy['Avg Gain'] / df_copy['Avg Loss']
+    df_copy['RSI'] = 100 - (100 / (1 + df_copy['RS']))
+    return df_copy['RSI'].tail()
 
 
 def get_time_frame_low(series: pd.Series) -> float:
@@ -111,12 +146,17 @@ def get_momentum_stats(
             fmt_delta_last_low = "{0:.2f}".format(delta_last_low)
             print(f"Time frame low: {fmt_low}")
             print(f"Current distance from low: {fmt_delta_last_low} %")
-            df_sma = calc_sma(df, period).tail()
+            df_sma = calc_sma(df['Close'], period)
+            df_rsi = calc_rsi(df['Close'])
             print(df.tail())
             print(df_sma)
-            sma_last = df_sma.iloc[-1]["Close"]
+            print(df_rsi)
+            sma_last = df_sma.iloc[-1]
             fmt_sma_last = "{0:.5f}".format(sma_last)
+            rsi_last = df_rsi.iloc[-1]
+            fmt_rsi_last = "{0:.5f}".format(rsi_last)
             print(f"Current {period} SMA: ${fmt_sma_last}")
+            print(f"Current RSI: {fmt_rsi_last}")
             upside_momentum = sma_last/last
             fmt_upside_momentum = "{0:.5f}".format(upside_momentum)
             print(f"Upside momentum: {fmt_upside_momentum}")
@@ -143,8 +183,10 @@ def get_momentum_stats(
                 fmt_delta_last_low = "{0:.2f}".format(delta_last_low)
                 #print(f"Time frame low: {fmt_low}")
                 #print(f"Current distance from low: {fmt_delta_last_low} %")
-                df_sma = calc_sma(df['Close'][S], period).tail()
+                df_sma = calc_sma(df['Close'][S], period)
+                df_rsi = calc_rsi(df['Close'][S])
                 sma_last = df_sma.iloc[-1]
+                rsi_last = df_rsi.iloc[-1]
                 fmt_sma_last = "{0:.5f}".format(sma_last)
                 #print(f"Current {period} SMA: ${fmt_sma_last}")
                 momentum_factor = sma_last/last_closing_price
@@ -159,9 +201,14 @@ def get_momentum_stats(
                     m.time_frame_low = low
                     m.curr_distance_from_low = delta_last_low
                     m.last_sma = sma_last
+                    if period == "20d":
+                        # only calculate RSI for SMA period that is most similar to time window /
+                        # horizon of RSI calc (12 days, is closest to 20 days). Otherwise there
+                        # will some duplicate RSI values for all the other SMA periods
+                        m.last_rsi = rsi_last
                     m.momentum_factor = momentum_factor
                     if not write_to_db:
-                        print(f"{s} {fmt_momentum_factor}")
+                        print(s, fmt_momentum_factor)
                     else:
                         results_dbwrite.append(m)
 
