@@ -1,0 +1,22 @@
+# https://playwright.dev/python/docs/docker
+FROM mcr.microsoft.com/playwright/python:v1.47.0-noble
+
+ARG USERNAME=nathan
+ARG USER_UID=1008
+ARG USER_GID=$USER_UID
+
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+
+USER $USERNAME
+
+WORKDIR /home/$USERNAME
+
+COPY --chown=$USERNAME:$USERNAME . .
+
+ARG PIP_NO_CACHE_DIR=1
+RUN pip install --upgrade pip 
+RUN pip install -r requirements.txt
+
+ENV PATH=$PATH:/home/$USERNAME/.local/bin
+CMD ["python", "pull_fcf_data.py", "nvda"]
