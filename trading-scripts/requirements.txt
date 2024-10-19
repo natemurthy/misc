@@ -1,0 +1,9 @@
+beautifulsoup4
+google-generativeai
+playwright
+psycopg[binary,pool]
+pytickersymbols
+pytz
+pyyaml
+tabulate
+yfinance
