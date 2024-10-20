@@ -1,12 +1,12 @@
 import datetime as dt
 import os
 import psycopg as pg
-import urllib
 
 from dataclasses import dataclass
 from psycopg import sql
 from psycopg_pool import ConnectionPool
 from typing import Any, Literal, TypeAlias, TypeVar
+from urllib import parse
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ class PostgresConnectionConfig:
     pool_params: dict[str, Any] | None = None  # if not passed, will not create a pool
 
     def get_unsafe_cxn_uri(self) -> str:
-        encoded_password = urllib.parse.quote(self.password)
+        encoded_password = parse.quote(self.password)
         uri = f"postgresql://{self.username}:{encoded_password}@{self.host}:{self.port}/{self.db_name}"
         if self.additional_connection_params is not None:
             uri += "?"
