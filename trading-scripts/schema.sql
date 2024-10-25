@@ -59,6 +59,7 @@ create table timeseries.hist_free_cash_flow (
   fcf_usd          bigint             not null
 );
 
+alter table timeseries.fcst_analyst_price_target add column ratings_count int;
 alter table timeseries.hist_momentum_stat add column rsi decimal;
 alter table timeseries.hist_momentum_stat rename column rsi to last_rsi;
 
