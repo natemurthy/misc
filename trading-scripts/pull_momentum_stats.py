@@ -1,6 +1,6 @@
 import db
+import math
 import util
-import numpy as np
 import pandas as pd
 import random
 import sys
@@ -191,7 +191,7 @@ def get_momentum_stats(
                 momentum_factor = sma_last/last_closing_price
                 fmt_momentum_factor = "{0:.2f}".format(momentum_factor)
 
-                if not np.isnan(momentum_factor):
+                if not math.isnan(momentum_factor):
                     results_stdout[S] = momentum_factor
                     m = HistMomentumStat.empty_result("yfinance", S)
                     m.last_closing_price = last_closing_price
