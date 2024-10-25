@@ -185,7 +185,7 @@ def fetch_analyst_forecasts(s: str, skip_tipranks: bool = False, skip_yfinance: 
     except KeyError:
         # This occurs for SPY, have not checked if this happens for all ETF symbols
         curr_price = ticker_data.info["ask"]
-    summary: str = f"Forecasts for {short_name} (symbol: {S}, last: ${curr_price})"
+    summary: str = f"Forecasts for {short_name} (symbol: {s.upper()}, last: ${curr_price})"
     print(summary)
 
     if not skip_tipranks:
