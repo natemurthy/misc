@@ -69,13 +69,14 @@ def get_ycharts_dividend(s: str) -> HistDividendYieldRecord:
     url = f"https://ycharts.com/companies/{s}/dividend_yield"
     r = HistDividendYieldRecord.empty_result("ycharts", s)
     try:
-        resp = requests.get(url, headers=util.get_random_use_agent_header())
+        resp = requests.get(url, headers=util.get_random_user_agent_header())
         html_text = resp.text
         soup = BeautifulSoup(html_text, 'html.parser')
         span= soup.find_all("span", {"class": "page-name-date"})
         if len(span) > 0:
             dividend_yield = float(span[0].contents[0].split("% for")[0])
             r.rate = dividend_yield
+            #print(r)
         else:
             #print(span)
             pass
