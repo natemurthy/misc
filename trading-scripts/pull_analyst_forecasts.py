@@ -1,7 +1,7 @@
 import const
 import datetime as dt
 import db
-import numpy as np
+import math
 import util
 import random
 import requests
@@ -23,7 +23,8 @@ class FcstAnalystPriceTarget(db.TableRowStruct):
     low: float
     high: float
     mean: float
-    median: float | None # Yahoo Finance only, not available from TipRanks
+    median: float | None # Yahoo Finance only
+    ratings_count: int | None # TipRanks only
     
     @staticmethod
     def empty_result(source: db.SourceLiteral, s: str):
@@ -41,6 +42,7 @@ class FcstAnalystPriceTarget(db.TableRowStruct):
             mean=nan,
             median=None,
             upside_potential=nan,
+            ratings_count=None,
         )
 
 def write_rows_to_table(c: db.PostgresClient, data: list[FcstAnalystPriceTarget]) -> None:
@@ -78,20 +80,23 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
 
     Where s.lower() is a ticker symbol in lower case. These may be visited with a typical web browser and are often
     restricted / limited to view after a small number of page visits.
+
+    Because TipRanks loads last closing price via an asyncronous client-side rendering, the true current price may
+    not reliably be available via page scraping. So this will also use Yahoo Finance for that number.
     """
-    # TODO add rate limiter when called more than 5 times in a row
+    S = s.upper()
     k, cur, potential, lo, avg, hi = 0, 0, 0 ,0 ,0, 0
-    asset_type = "etf" if s.upper() in const.ETF_SYMBOLS else "stocks"
+    asset_type = "etf" if S in const.ETF_SYMBOLS else "stocks"
     url = f"https://www.tipranks.com/{asset_type}/{s.lower()}/forecast"
-    res = FcstAnalystPriceTarget.empty_result("tipranks", s.upper())
-    print("debug_fetch_tipranks_estimates:", f"symbol={s.upper()}")
+    res = FcstAnalystPriceTarget.empty_result("tipranks", S)
+    print("debug_fetch_tipranks_estimates:", f"symbol={S}")
     try:
         h = util.get_random_user_agent_header()
         r = requests.get(url, headers=h)
     except Exception as ex:
         print(
             "error_fetch_tipranks_estimates:",
-            f"symbol='{s.upper()}'",
+            f"symbol='{S}'",
             f"err='{ex}'",
             f"http_resp='{r}'",
             f"req_header='{h}'",
@@ -107,18 +112,18 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
                 print("TipRanks potential:", potential.replace("(", "").replace(")", ""))
         tr = soup.find_all('tr')
         k = get_ratings_count_from_html(s, span_mr2)
-
-        if asset_type == "etf":
-            cur = float(soup.find_all("span", {"class": "fontWeightsemibold colorblack"})[21].contents[0].replace("$", "").replace(",", ""))
-        if asset_type == "stocks":
-            cur = float(soup.find_all("span", {"class": "fontWeightsemibold colorblack"})[22].contents[0].replace("$", "").replace(",", ""))
+        # NOTE not a reliable source of last price, value might cached or "stuck"
+        #if asset_type == "etf":
+            #cur = float(soup.find_all("span", {"class": "fontWeightsemibold colorblack"})[21].contents[0].replace("$", "").replace(",", ""))
+        #if asset_type == "stocks":
+            #cur = float(soup.find_all("span", {"class": "fontWeightsemibold colorblack"})[22].contents[0].replace("$", "").replace(",", ""))
         hi = get_target_from_html(s, tr, 0)
         avg = get_target_from_html(s, tr, 2)
         lo = get_target_from_html(s, tr, 4)
     except Exception as ex:
         print(
             "error_fetch_tipranks_estimates:",
-            f"symbol={s.upper()}",
+            f"symbol={S}",
             f"err='{ex}'",
             f"reason='html parsing error'",
             f"http_resp='{r}'",
@@ -127,11 +132,18 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
         return res
     if print_stdout:
         print("TipRanks ratings count:", k)
+    ticker_info = {}
+    try:
+        ticker_info = yf.Ticker(S).info
+        cur = ticker_info["currentPrice"]
+    except Exception:
+        cur = ticker_info["ask"]
     res.last_closing_price = cur
     res.low = lo
     res.high = hi
     res.mean = avg
-    if avg is not None and not np.isnan(avg) and not np.isnan(cur):
+    res.ratings_count = k
+    if avg is not None and not math.isnan(avg) and not math.isnan(cur):
         # for TipRanks upside potential estimates, we divide the mean over the last closing price because
         # the median is not available
         res.upside_potential = avg / cur
@@ -155,7 +167,7 @@ def fetch_yfinance_estimates(s: str) -> FcstAnalystPriceTarget:
         res.high = t["high"]
         res.mean = t["mean"]
         res.median = t["median"]
-        if res.median is not None and not np.isnan(float(res.median)) and not np.isnan(res.last_closing_price):
+        if res.median is not None and not math.isnan(float(res.median)) and not math.isnan(res.last_closing_price):
             # for Yahoo Finance upside potential estimates, the formula is slightly different than TipRanks
             # because the median price estimate IS available. So we divide the median over the last closing
             # price as more accurate alternate
@@ -171,20 +183,21 @@ def fetch_analyst_forecasts(s: str, skip_tipranks: bool = False, skip_yfinance: 
     try:
         curr_price = ticker_data.info["currentPrice"]
     except KeyError:
-        curr_price = ticker_data.info["previousClose"]
-    summary: str = f"Forecasts for {short_name} (symbol: {s.upper()}, last: ${curr_price})"
+        # This occurs for SPY, have not checked if this happens for all ETF symbols
+        curr_price = ticker_data.info["ask"]
+    summary: str = f"Forecasts for {short_name} (symbol: {S}, last: ${curr_price})"
     print(summary)
 
     if not skip_tipranks:
         r = fetch_tipranks_estimates(s)
-        if not np.isnan(r.mean):
+        if not math.isnan(r.mean):
             print(r)
         else:
             print("No TipRanks data available")
 
     if not skip_yfinance:
         r = fetch_yfinance_estimates(s)
-        if not np.isnan(r.mean):
+        if not math.isnan(r.mean):
             print(r)
         else:
             print("No Yahoo Finance data available")
@@ -218,7 +231,7 @@ def main():
                     r = fetch_yfinance_estimates(s)
                     if not write_to_db:
                         print(r)
-                    if not np.isnan(r.upside_potential):
+                    if not math.isnan(r.upside_potential):
                         results_stdout[f"yfinance:{s}"] = r.upside_potential
                         results_dbwrite.append(r)
             if write_to_db:
@@ -246,7 +259,7 @@ def main():
                 r = fetch_tipranks_estimates(s, print_stdout=not write_to_db)
                 if not write_to_db:
                     print(r)
-                if not np.isnan(r.upside_potential):
+                if not math.isnan(r.upside_potential):
                     results_stdout[f"tipranks:{s}"] = r.upside_potential
                     results_dbwrite.append(r)
 
