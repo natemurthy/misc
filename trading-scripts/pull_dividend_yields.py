@@ -1,7 +1,6 @@
-import const
 import db
+import  math
 import util
-import numpy as np
 import random
 import requests
 import sys
@@ -136,13 +135,13 @@ def main():
                 # we already have the closing price from yfinance, so set it on the ycharts result
                 yc_r.last_closing_price = yf_r.last_closing_price
 
-            if not skip_ycharts and not np.isnan(yc_r.rate) and yc_r.rate > 0:
+            if not skip_ycharts and not math.isnan(yc_r.rate) and yc_r.rate > 0:
                 if not write_to_db:
                     results_stdout[f"ycharts:{s}"] = yc_r.rate
                     print(yc_r)
                 else:
                     results_dbwrite.append(yc_r)
-            if not np.isnan(yf_r.rate) and yf_r.rate > 0:
+            if not math.isnan(yf_r.rate) and yf_r.rate > 0:
                 if not write_to_db:
                     results_stdout[f"yfinance:{s}"] = yf_r.rate
                     print(yf_r)
