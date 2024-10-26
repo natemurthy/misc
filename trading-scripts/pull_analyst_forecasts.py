@@ -112,6 +112,7 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
                 print("TipRanks potential:", potential.replace("(", "").replace(")", ""))
         tr = soup.find_all('tr')
         k = get_ratings_count_from_html(s, span_mr2)
+        res.ratings_count = k
         # NOTE not a reliable source of last price, value might cached or "stuck"
         #if asset_type == "etf":
             #cur = float(soup.find_all("span", {"class": "fontWeightsemibold colorblack"})[21].contents[0].replace("$", "").replace(",", ""))
@@ -120,6 +121,9 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
         hi = get_target_from_html(s, tr, 0)
         avg = get_target_from_html(s, tr, 2)
         lo = get_target_from_html(s, tr, 4)
+        res.low = lo
+        res.high = hi
+        res.mean = avg
     except Exception as ex:
         print(
             "error_fetch_tipranks_estimates:",
@@ -139,6 +143,7 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
             cur = ticker_info["currentPrice"]
         if ticker_info["quoteType"] == "ETF":
             cur = (ticker_info["bid"]+ticker_info["ask"])/2.0
+        res.last_closing_price = cur
     except Exception as ex:
         print(
             "error_fetch_tipranks_estimates:",
@@ -146,12 +151,7 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
             f"err='{ex}'",
             f"reason='no latest price available from yfinance'",
         )
-    res.last_closing_price = cur
-    res.low = lo
-    res.high = hi
-    res.mean = avg
-    res.ratings_count = k
-    if avg is not None and not math.isnan(avg) and not math.isnan(cur):
+    if avg != 0 and cur != 0:
         # for TipRanks upside potential estimates, we divide the mean over the last closing price because
         # the median is not available
         res.upside_potential = avg / cur
