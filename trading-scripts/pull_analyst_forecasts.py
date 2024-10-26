@@ -135,9 +135,17 @@ def fetch_tipranks_estimates(s: str, print_stdout: bool = True) -> FcstAnalystPr
     ticker_info = {}
     try:
         ticker_info = yf.Ticker(S).info
-        cur = ticker_info["currentPrice"]
-    except Exception:
-        cur = ticker_info["ask"]
+        if ticker_info["quoteType"] == "EQUITY":
+            cur = ticker_info["currentPrice"]
+        if ticker_info["quoteType"] == "ETF":
+            cur = (ticker_info["bid"]+ticker_info["ask"])/2.0
+    except Exception as ex:
+        print(
+            "error_fetch_tipranks_estimates:",
+            f"symbol={S}",
+            f"err='{ex}'",
+            f"reason='no latest price available from yfinance'",
+        )
     res.last_closing_price = cur
     res.low = lo
     res.high = hi
