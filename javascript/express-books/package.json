@@ -13,6 +13,6 @@
     "body-parser": "^1.20.3",
     "express": "^4.21.1",
     "log-timestamp": "^0.3.0",
-    "mysql2": "^2.3.3"
+    "mysql2": "^3.9.8"
   }
 }
