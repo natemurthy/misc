@@ -1,4 +1,4 @@
--- symbol screener (by upside_potential)
+-- buy-side symbol screener (by upside_potential)
 select t.source, t.symbol, t.upside_potential, m.last_sma, m.last_closing_price
 from timeseries.hist_momentum_stat m
 inner join timeseries.fcst_analyst_price_target t on t.trading_day = m.trading_day and t.symbol = m.symbol
@@ -20,6 +20,16 @@ where
   and t.upside_potential > 1.3
 order by m.momentum_factor desc
 
+-- sell-side symbol screener (by upside_potential)
+select t.symbol, upside_potential, last_closing_price, median, mean
+from timeseries.fcst_analyst_price_target t
+inner join portfolio.holdings p on p.symbol = t.symbol
+where
+  t.trading_day = '2024-11-07'
+  and source = 'tipranks'
+  and upside_potential < 1.10
+order by upside_potential asc
+
 -- get analyst price targets
 select symbol, upside_potential, median, mean, low, high
 from timeseries.fcst_analyst_price_target
@@ -27,9 +37,9 @@ where trading_day = '2024-10-11'
 order by upside_potential desc
 
 -- get analyst price target history for a given symbol sorted by created_at
-select trading_day, symbol, upside_potential, median, mean, low, high
+select trading_day, upside_potential, last_closing_price, median, mean, low, high, ratings_count
 from timeseries.fcst_analyst_price_target
-where symbol = 'ASML' and source = 'yfinance'
+where symbol = upper('asml') and source = 'yfinance' -- or 'tipranks'
 order by created_at desc
 
 -- get dividend yields
