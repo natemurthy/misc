@@ -97,7 +97,7 @@ def str_to_date(ycharts_date: str) -> dt.date:
         return dt.datetime.strptime(ycharts_date, DATE_FMT).date()
     except ValueError:
         # LLM will not always properly extract the dates, so need to revise them manually,
-        # e.g. 2023-04-31 is out of bands, and so is 2018-02-29
+        # e.g. 2023-04-31 is out of bounds, and so is 2018-02-29
         if ycharts_date.endswith("-29"):
             rev_date = ycharts_date.replace("-29","-28")
             return dt.datetime.strptime(rev_date, DATE_FMT).date()
