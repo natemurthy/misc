@@ -64,7 +64,7 @@ symbol in ('AAPL','NVDA','MSFT','GOOGL','AMZN','META','TSLA')
 symbol in ('BAC','BANC','BLK','C','CMA','DB','FHN','GS','JPM','KEY','KRE','MA','MS','UBS','V','WAL','WFC')
 
 -- China stocks
-symbol in ('BABA','BYDDY','BIDU','JD','LI','MCHI','PDD')
+symbol in ('BABA','BYDDY','BIDU','JD','LI','MCHI', 'NIO', 'NTES', 'PDD', 'XPEV')
 
 -- Real Estate
 symbol in ('MAA','O','PLD')
