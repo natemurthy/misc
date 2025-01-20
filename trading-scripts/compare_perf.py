@@ -14,6 +14,7 @@ def get_bench_data() -> pd.DataFrame:
             df.at[df.index[i], f"diff_{s}"] = (df[s].iloc[i] - df[s].iloc[0]) / df[s].iloc[0] * 100
     return df
 
+
 def get_nate_data() -> pd.DataFrame:
     df = pd.read_csv('/Users/nathan/Downloads/2024_invest_perf_nate.csv')
     df['Total Value'] = df['Total Value'].str.replace(r'[^\d.]', '', regex=True)
