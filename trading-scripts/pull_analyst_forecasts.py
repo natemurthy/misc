@@ -25,6 +25,8 @@ class FcstAnalystPriceTarget(db.TableRowStruct):
     mean: float
     median: float | None # Yahoo Finance only
     ratings_count: int | None # TipRanks only
+    pe_fwd: float | None # Yahoo Finance only
+    pe_ttm: float | None # Yahoo Finance only
     
     @staticmethod
     def empty_result(source: db.SourceLiteral, s: str):
@@ -43,6 +45,8 @@ class FcstAnalystPriceTarget(db.TableRowStruct):
             median=None,
             upside_potential=nan,
             ratings_count=None,
+            pe_fwd=None,
+            pe_ttm=None,
         )
 
 def write_rows_to_table(c: db.PostgresClient, data: list[FcstAnalystPriceTarget]) -> None:
@@ -180,6 +184,9 @@ def fetch_yfinance_estimates(s: str) -> FcstAnalystPriceTarget:
             # because the median price estimate IS available. So we divide the median over the last closing
             # price as more accurate alternate
             res.upside_potential = res.median / res.last_closing_price
+        i = ticker_data.info
+        res.pe_ttm = i["trailingPE"]
+        res.pe_fwd = i["forwardPE"]
     except Exception as ex:
         print("error_fetch_yfinance_estimates:",f"symbol={s.upper()}",  f"err='{ex}'")
     return res
