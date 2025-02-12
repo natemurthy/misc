@@ -1,3 +1,15 @@
+-- get analyst price target history for a given symbol sorted by created_at (tipranks)
+select trading_day, upside_potential, last_closing_price, mean, low, high, ratings_count
+from timeseries.fcst_analyst_price_target
+where symbol = upper('nvda') and source = 'tipranks'
+order by created_at desc
+
+-- get analyst price target history for a given symbol sorted by created_at (yfinance)
+select trading_day, upside_potential, last_closing_price, median, mean, low, high, pe_ttm, pe_fwd
+from timeseries.fcst_analyst_price_target
+where symbol = upper('nvda') and source = 'yfinance'
+order by created_at desc
+
 -- buy-side symbol screener (by upside_potential)
 select t.source, t.symbol, t.upside_potential, m.last_sma, m.last_closing_price
 from timeseries.hist_momentum_stat m
@@ -35,12 +47,6 @@ select symbol, upside_potential, median, mean, low, high
 from timeseries.fcst_analyst_price_target
 where trading_day = '2024-10-11'
 order by upside_potential desc
-
--- get analyst price target history for a given symbol sorted by created_at
-select trading_day, upside_potential, last_closing_price, median, mean, low, high, ratings_count
-from timeseries.fcst_analyst_price_target
-where symbol = upper('asml') and source = 'yfinance' -- or 'tipranks'
-order by created_at desc
 
 -- get dividend yields
 select symbol, rate, source
