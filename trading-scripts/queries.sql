@@ -10,6 +10,15 @@ from timeseries.fcst_analyst_price_target
 where symbol = upper('nvda') and source = 'yfinance'
 order by created_at desc
 
+-- P/E ratio comarison
+select symbol, pe_ttm, pe_fwd, upside_potential, last_closing_price, median
+from timeseries.fcst_analyst_price_target
+where
+  source = 'yfinance'
+  and trading_day = '2025-02-14'
+  and symbol in ('NVDA', 'GOOGL')
+order by pe_fwd asc
+
 -- buy-side symbol screener (by upside_potential)
 select t.source, t.symbol, t.upside_potential, m.last_sma, m.last_closing_price
 from timeseries.hist_momentum_stat m
