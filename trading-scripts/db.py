@@ -97,26 +97,28 @@ class PostgresClient:
             List of table row IDs written (assumed these are serial integers for now, but may be typeids)
         """
         # assumes the first row record appears like all the others
-        insert_columns = self._get_insertable_columns(rows[0]) 
-        insert_values = [[item.__dict__[col] for col in insert_columns] for item in rows]
-        query = sql.SQL("""
-                        INSERT INTO {schema_name}.{table_name}
-                        ({columns}) VALUES ({values})
-                        RETURNING {id_column}
-                        """).format(
-            schema_name=sql.Identifier(schema_name),
-            table_name=sql.Identifier(table_name),
-            columns=sql.SQL(",").join(list(map(sql.Identifier, insert_columns))),
-            id_column=sql.Identifier(id_column),
-            values=sql.SQL(" , ").join(sql.Placeholder() * len(insert_columns)),
-        )
-        with self._connection.cursor() as cur:
-            cur.executemany(query, insert_values, returning=True)
-            # in psycopg3 to return all returned ids we should loop through the cursor.
-            ids = [cur.fetchone()[0]]
-            while cur.nextset():
-                ids.append(cur.fetchone()[0])
-            self._connection.commit()
+        ids: list[int] = []
+        if len(rows) > 0:
+            insert_columns = self._get_insertable_columns(rows[1])
+            insert_values = [[item.__dict__[col] for col in insert_columns] for item in rows]
+            query = sql.SQL("""
+                            INSERT INTO {schema_name}.{table_name}
+                            ({columns}) VALUES ({values})
+                            RETURNING {id_column}
+                            """).format(
+                schema_name=sql.Identifier(schema_name),
+                table_name=sql.Identifier(table_name),
+                columns=sql.SQL(",").join(list(map(sql.Identifier, insert_columns))),
+                id_column=sql.Identifier(id_column),
+                values=sql.SQL(" , ").join(sql.Placeholder() * len(insert_columns)),
+            )
+            with self._connection.cursor() as cur:
+                cur.executemany(query, insert_values, returning=True)
+                # in psycopg3 to return all returned ids we should loop through the cursor.
+                ids = [cur.fetchone()[0]]
+                while cur.nextset():
+                    ids.append(cur.fetchone()[0])
+                self._connection.commit()
         return ids
 
 
