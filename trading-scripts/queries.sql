@@ -1,14 +1,22 @@
+-- estimate of table size by row count
+-- see https://stackoverflow.com/a/2611745
+SELECT schemaname, relname, n_live_tup FROM pg_stat_user_tables 
+ORDER BY n_live_tup DESC;
+
+
 -- get analyst price target history for a given symbol sorted by created_at (tipranks)
 select trading_day, upside_potential, last_closing_price, mean, low, high, ratings_count
 from timeseries.fcst_analyst_price_target
 where symbol = upper('nvda') and source = 'tipranks'
 order by created_at desc
 
+
 -- get analyst price target history for a given symbol sorted by created_at (yfinance)
 select trading_day, upside_potential, last_closing_price, median, mean, low, high, pe_ttm, pe_fwd
 from timeseries.fcst_analyst_price_target
 where symbol = upper('nvda') and source = 'yfinance'
 order by created_at desc
+
 
 -- P/E ratio comarison
 select symbol, pe_ttm, pe_fwd, upside_potential, last_closing_price, median
@@ -18,6 +26,7 @@ where
   and trading_day = '2025-02-14'
   and symbol in ('NVDA', 'GOOGL')
 order by pe_fwd asc
+
 
 -- buy-side symbol screener (by upside_potential)
 select t.source, t.symbol, t.upside_potential, m.last_sma, m.last_closing_price
@@ -30,6 +39,7 @@ where
   and t.upside_potential > 1.3
 order by t.upside_potential desc
 
+
 -- symbol screener (by momentum_factor)
 select t.source, t.symbol, m.momentum_factor, t.upside_potential, m.last_sma, m.last_closing_price
 from timeseries.hist_momentum_stat m
@@ -41,6 +51,7 @@ where
   and t.upside_potential > 1.3
 order by m.momentum_factor desc
 
+
 -- sell-side symbol screener (by upside_potential)
 select t.symbol, upside_potential, last_closing_price, median, mean
 from timeseries.fcst_analyst_price_target t
@@ -51,17 +62,20 @@ where
   and upside_potential < 1.10
 order by upside_potential asc
 
+
 -- get analyst price targets
 select symbol, upside_potential, median, mean, low, high
 from timeseries.fcst_analyst_price_target
 where trading_day = '2024-10-11'
 order by upside_potential desc
 
+
 -- get dividend yields
 select symbol, rate, source
 from timeseries.hist_dividend_yield
 where trading_day = '2024-10-11'
 order by rate desc
+
 
 -- get moving averages
 select symbol, momentum_factor, last_closing_price, last_sma
