@@ -99,7 +99,7 @@ class PostgresClient:
         # assumes the first row record appears like all the others
         ids: list[int] = []
         if len(rows) > 0:
-            insert_columns = self._get_insertable_columns(rows[1])
+            insert_columns = self._get_insertable_columns(rows[0])
             insert_values = [[item.__dict__[col] for col in insert_columns] for item in rows]
             query = sql.SQL("""
                             INSERT INTO {schema_name}.{table_name}
