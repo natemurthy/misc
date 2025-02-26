@@ -241,7 +241,9 @@ def main():
 
         if source == "yfinance":
             print("info_main:", "pulling analyst price targets from yfinance")
-            for s in symbols:
+            num_workers, worker_index = util.get_num_workers_and_worker_index()
+            for i in util.get_symbol_ranges_for_worker(worker_index, num_workers, k):
+                s = symbols[i]
                 if s not in const.ETF_SYMBOLS:
                     r = fetch_yfinance_estimates(s)
                     if not write_to_db:
@@ -249,6 +251,10 @@ def main():
                     if not math.isnan(r.upside_potential):
                         results_stdout[f"yfinance:{s}"] = r.upside_potential
                         results_dbwrite.append(r)
+                    # see Yahoo Finance API rate limits: https://help.yahooinc.com/dsp-api/docs/rate-limits
+                    jitter = random.uniform(0, 1)
+                    interval = 0.2 + jitter
+                    time.sleep(interval)
             if write_to_db:
                 print("info_main:", f"writing yfinance analyst data to db (row_count = {len(results_dbwrite)})")
                 write_rows_to_table(db_client, results_dbwrite)
@@ -267,7 +273,7 @@ def main():
                         results_dbwrite.clear()
                     jitter = random.uniform(0, 10)
                     interval = 60.5 + jitter
-                    print("info_main:", f"waitng {interval} sec due to tipranks rate limiter")
+                    print("info_main:", f"waiting {interval} sec due to tipranks rate limiter")
                     time.sleep(interval)
 
                 print("info_main:", f"symbol_index = {i}")
