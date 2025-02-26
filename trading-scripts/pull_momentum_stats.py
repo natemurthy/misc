@@ -1,5 +1,6 @@
 import db
 import math
+import numpy as np
 import util
 import pandas as pd
 import random
@@ -173,8 +174,8 @@ def get_momentum_stats(
                 #print(f"Momentum stats for {S}")
                 last_closing_price = float(last[S])
                 fmt_last = "{0:.5f}".format(last_closing_price)
-                adj_close = df.iloc[-1]["Adj Close"][S]
-                fmt_adj_close = "{0:.5f}".format(adj_close)
+                #adj_close = df.iloc[-1]["Adj Close"][S]
+                #fmt_adj_close = "{0:.5f}".format(adj_close)
                 #print(f"Last price: $ last {fmt_last}, adj_close {fmt_adj_close}")
                 low = get_time_frame_low(df['Close'][S])
                 fmt_low = "{0:.5f}".format(low)
@@ -196,7 +197,7 @@ def get_momentum_stats(
                     m = HistMomentumStat.empty_result("yfinance", S)
                     m.last_closing_price = last_closing_price
                     m.sma_period = period
-                    m.last_adj_close = adj_close
+                    #m.last_adj_close = adj_close
                     m.time_frame_low = low
                     m.curr_distance_from_low = delta_last_low
                     m.last_sma = sma_last
