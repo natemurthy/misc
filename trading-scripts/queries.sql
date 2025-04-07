@@ -89,6 +89,9 @@ order by momentum_factor desc
 -- Magnificent 7
 symbol in ('AAPL','NVDA','MSFT','GOOGL','AMZN','META','TSLA')
 
+-- Rotations in 6750 (NVO, TFX, XRAY are questionable hedges), still need to find Stoxx 600 ETF (DEBF, EWG, HEDJ?)
+AFK, INDA, UTWO, FLOT, ILF, VGK, DBEF, EWG, EWJ, HEDJ, MCHI, GLD, EIX, CCI, NEE, MOH, NVO, DXCM, TFX, XRAY, VICI, O, PLD, MRK, ELV, OGN, ABBV, A, PPL, WELL, VST, CEG, WCC, PWR
+
 -- Finance
 symbol in ('BAC','BANC','BLK','C','CMA','DB','FHN','GS','JPM','KEY','KRE','MA','MS','UBS','V','WAL','WFC')
 
