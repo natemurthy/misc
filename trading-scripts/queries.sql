@@ -7,7 +7,7 @@ ORDER BY n_live_tup DESC;
 -- get analyst price target history for a given symbol sorted by created_at (tipranks)
 select trading_day, upside_potential, last_closing_price, mean, low, high, ratings_count
 from timeseries.fcst_analyst_price_target
-where symbol = upper('nvda') and source = 'tipranks'
+where symbol = upper('spy') and source = 'tipranks'
 order by created_at desc
 
 
