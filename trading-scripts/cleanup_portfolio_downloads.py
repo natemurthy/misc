@@ -6,7 +6,7 @@ import util
 
 
 def cleanup_portfolio_csv(filename: str) -> str:
-    fout_filename = f"clean-{filename}.csv"
+    fout_filename = f"clean-{filename}"
     with open(filename) as fin, open(fout_filename, 'w') as fout:
         lines = fin.readlines()
         print(filename, lines[-1].replace("\n",""))
@@ -18,7 +18,7 @@ def cleanup_portfolio_csv(filename: str) -> str:
 
 
 def _from_fidelity_value_to_float(v: str) -> float:
-    if v == "nan":
+    if v == "nan" or v == "--":
         return 0.0
     else:
         return float(v.replace("$",""))
