@@ -1,2 +1,2 @@
 # misc
-Workspace repository of miscellaneous projects
+Workspace mono repository of miscellaneous projects
