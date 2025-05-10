@@ -27,10 +27,17 @@ def main():
     from os import listdir
     from os.path import isfile, join
 
+    existing_symbols = []
+    with open("my_sorted_symbols.txt", 'r') as fin:
+        for s in fin:
+            existing_symbols.append(s.replace("\n",""))
+
+    print(existing_symbols)
+
     curr_path = os.getcwd()
     files = [f for f in listdir(curr_path) if isfile(join(curr_path, f)) and f.startswith("clean-Portfolio")]
 
-    my_symbols = set([])
+    my_symbols = set(existing_symbols)
     for f in files:
         my_symbols |= extract_symbols(f)
 
