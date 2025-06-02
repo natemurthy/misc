@@ -53,17 +53,17 @@ def black_scholes_put(S, K, T, r, sigma):
 
 
 # Given values
-K = 490
-t_minus = 5        # 956 days til 17 Dec 2017 (as of 4 May 2024)
+K = 480
+t_minus = 850        # 956 days til 17 Dec 2017 (as of 4 May 2024)
 r = 0.04           # updated risk-free rate (4%)
-sigma = 0.2780     # QQQ as of 6 May 2025
+sigma = 0.4     # QQQ as of 6 May 2025
 
 
 # Calculate future options price
 def model_option_price():
-    scenario_underlying_price = 700
+    scenario_underlying_price = 400
     T = t_minus/365.0  # fraction of days over a year remaining until expiration
-    p = black_scholes_put(scenario_underlying_price, K, T, r, sigma)
+    p = black_scholes_call(scenario_underlying_price, K, T, r, sigma)
     print(f"Strike: {K}")
     print(f"Scenario: {scenario_underlying_price}")
     print(f"Days until exp: {t_minus}, modeled price: {p}")
@@ -167,10 +167,10 @@ def solve_spot_price():
 
 
 def main():
-    #model_option_price()
+    model_option_price()
     #model_option_positions(spy_positions, 566.76, 0.99)
     #model_option_positions(qqq_positions, 488.83, 0.99)
-    model_option_price_chain()
+    #model_option_price_chain()
     #solve_spot_price()
 
 if __name__ == "__main__":
