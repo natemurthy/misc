@@ -52,14 +52,15 @@ order by m.momentum_factor desc
 
 
 -- sell-side symbol screener (by upside_potential)
-select t.symbol, upside_potential, last_closing_price, median, mean
-from timeseries.fcst_analyst_price_target t
-inner join portfolio.holdings p on p.symbol = t.symbol
+select t.source, t.symbol, t.upside_potential, m.last_sma, m.last_closing_price
+from timeseries.hist_momentum_stat m
+inner join timeseries.fcst_analyst_price_target t on t.trading_day = m.trading_day and t.symbol = m.symbol
 where
-  t.trading_day = '2025-05-30'
-  and source = 'tipranks'
-  and upside_potential < 1.10
-order by upside_potential asc
+  m.sma_period = '20d'
+  and m.trading_day = '2025-06-05'
+  and m.last_closing_price > m.last_sma
+  and t.upside_potential < 1.09
+order by t.upside_potential asc
 
 
 -- get analyst price targets
