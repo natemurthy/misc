@@ -92,12 +92,44 @@ async fn run_schedule(
     info!("Start time: {}", start_chrono.format("%H:%M:%S.%6f"));
     info!("Waiting {:?} until start time...", initial_delay);
 
-    // Execute each setpoint at its exact scheduled instant using sleep_until for precision
+    // Execute each setpoint at its exact scheduled instant using hybrid sleep+busy-wait
+    //
+    // How it works:
+    // 1. Async sleep phase:
+    //   - Sleeps until 1.5ms before the target time using tokio::time::sleep_until
+    //   - This is efficient and yields the CPU to other tasks
+    // 2. Busy-wait phase:
+    //   - For the final 1.5ms (1500 microseconds), uses a tight spin loop
+    //   - Continuously checks tokio::time::Instant::now() until we hit the exact target
+    //   - Uses std::hint::spin_loop() which hints to the CPU we're spinning (helps with power
+    //     management and hyperthreading)
+    //
+    // Trade-offs:
+    //   Pros: Should achieve microsecond-level precision (potentially <100μs drift)
+    //   Cons: Uses 100% of one CPU core for the final 2ms before each execution
+    //
+    // For precision control systems, this trade-off is usually acceptable. The busy-wait
+    // threshold of 1-2ms is tunable - you could reduce it to 1ms if CPU usage is a concern,
+    // or increase it to 3-5ms if you want maximum precision and don't mind the CPU usage.
     for (i, &setpoint) in setpoints.iter().enumerate() {
         let target_instant = execution_instants[i];
 
-        // Sleep until exact target instant (more precise than sleep with duration)
-        tokio::time::sleep_until(target_instant).await;
+        // Hybrid approach for microsecond precision:
+        // 1. Sleep until 1.5ms before target (async, yields CPU)
+        let busy_wait_threshold = std::time::Duration::from_micros(1500);
+        let now = tokio::time::Instant::now();
+
+        if let Some(sleep_duration) = target_instant.checked_duration_since(now) {
+            if sleep_duration > busy_wait_threshold {
+                let sleep_until = target_instant - busy_wait_threshold;
+                tokio::time::sleep_until(sleep_until).await;
+            }
+        }
+
+        // 2. Busy-wait for the remaining microseconds for exact precision
+        while tokio::time::Instant::now() < target_instant {
+            std::hint::spin_loop();
+        }
 
         set_real_power_w(setpoint);
     }
