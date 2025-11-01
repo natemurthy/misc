@@ -218,7 +218,7 @@ pub async fn run() {
 
     info!("=== Example: Schedule Override Demo ===");
 
-    let interval_duration = "10S";
+    let interval_duration = "1S";
 
     // First schedule - 8 setpoints starting at next interval boundary
     let start_time1 = match next_interval_mark(interval_duration) {
@@ -236,8 +236,8 @@ pub async fn run() {
         return;
     }
 
-    info!("Waiting 40 seconds before overriding with new schedule...");
-    tokio::time::sleep(tokio::time::Duration::from_secs(40)).await;
+    info!("Waiting 5 seconds before overriding with new schedule...");
+    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
     // Second schedule - overrides the first with new 8 setpoints at next interval boundary
     let start_time2 = match next_interval_mark(interval_duration) {
@@ -256,6 +256,6 @@ pub async fn run() {
     }
 
     // Wait for the second schedule to complete
-    tokio::time::sleep(tokio::time::Duration::from_secs(85)).await;
+    tokio::time::sleep(tokio::time::Duration::from_millis(8500)).await;
     info!("=== Demo Complete ===");
 }
