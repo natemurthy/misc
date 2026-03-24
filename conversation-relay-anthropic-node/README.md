@@ -2,9 +2,15 @@
 
 https://www.twilio.com/en-us/blog/integrate-anthropic-twilio-voice-using-conversationrelay
 
-Run with
+Start ngrok with `ngrok http 8080` 
+
+> [!NOTE]  
+> The URL will be different on each shell command invocation of `ngrok`. Both the phone number webhook configuration
+> and env var need to updated each time.
+
+And run then the integration server with
 ```
-NGROK_URL="3f95-98-51-1-92.ngrok-free.app" node server.js
+NGROK_URL="ffff-NN-NN-N-NN.ngrok-free.app" node server.js
 ```
 
 Sample log of demo run:
