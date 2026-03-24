@@ -123,6 +123,37 @@ def _download_chunk(
     return pd.DataFrame()
 
 
+def _fetch_upside_potential(
+    s: str, retries: int = 3, backoff: float = 2.0
+) -> float | None:
+    for attempt in range(retries):
+        try:
+            t = yf.Ticker(s).analyst_price_targets
+            median, current = t.get("median"), t.get("current")
+            if median and current and current != 0:
+                return median / current
+            return None
+        except Exception:
+            if attempt < retries - 1:
+                time.sleep(backoff * (attempt + 1))
+    return None
+
+
+def fetch_upside_potentials(symbols: list[str]) -> pd.DataFrame:
+    """Return a DataFrame indexed by symbol with an upsidePotential column.
+    Results are cached per day (LA time) keyed on the qualifying symbol set."""
+    key = _cache_key("analyst_targets", symbols)
+    cache_path = CACHE_DIR / f"{key}_yfinance.parquet"
+
+    def fetch():
+        rows = []
+        for s in tqdm(symbols, desc="Fetching analyst targets", unit="ticker"):
+            rows.append({"symbol": s, "upsidePotential": _fetch_upside_potential(s)})
+        return pd.DataFrame(rows).set_index("symbol")
+
+    return _load_or_write(cache_path, fetch)
+
+
 def fetch_prices(symbols: list[str], period: str, interval: str) -> pd.DataFrame:
     """Return a yfinance OHLCV DataFrame for symbols.
     Downloads in batches of 50 to avoid overwhelming yfinance's connection pool.
@@ -159,6 +190,11 @@ def screen_tickers(market_cap_min: float) -> list[dict]:
     if not qualifying:
         return []
 
+    print(
+        f"Fetching analyst price targets for {len(qualifying)} symbols...", flush=True
+    )
+    up_df = fetch_upside_potentials(qualifying)
+
     # Need 100w SMA + 14w RSI lookback; 10 years of weekly data is sufficient
     print(
         f"Downloading 10y weekly price data for {len(qualifying)} symbols...",
@@ -192,6 +228,7 @@ def screen_tickers(market_cap_min: float) -> list[dict]:
                 continue
 
             if last_rsi < 30 and last_price < last_sma:
+                up = up_df.loc[s, "upsidePotential"] if s in up_df.index else None
                 results.append(
                     {
                         "symbol": s,
@@ -199,12 +236,21 @@ def screen_tickers(market_cap_min: float) -> list[dict]:
                         "sma_100w": last_sma,
                         "delta_sma": last_sma - last_price,
                         "rsi_14w": last_rsi,
+                        "upside_potential": float(up)
+                        if up is not None
+                        else float("nan"),
                     }
                 )
         except Exception:
             pass
 
-    return sorted(results, key=lambda x: x["rsi_14w"])
+    return sorted(
+        results,
+        key=lambda x: x["upside_potential"]
+        if not np.isnan(x["upside_potential"])
+        else -np.inf,
+        reverse=True,
+    )
 
 
 def main():
@@ -226,7 +272,14 @@ def main():
         print("\nNo tickers matched the criteria.")
         return
 
-    headers = ["Symbol", "Price", "100w SMA", "$ Below SMA", "RSI (14w)"]
+    headers = [
+        "Symbol",
+        "Price",
+        "100w SMA",
+        "$ Below SMA",
+        "RSI (14w)",
+        "Upside Potential",
+    ]
     rows = [
         [
             r["symbol"],
@@ -234,6 +287,9 @@ def main():
             f"${r['sma_100w']:.2f}",
             f"${r['delta_sma']:.2f}",
             f"{r['rsi_14w']:.4f}",
+            f"+{(r['upside_potential'] - 1) * 100:.1f}%"
+            if not np.isnan(r["upside_potential"])
+            else "N/A",
         ]
         for r in results
     ]
