@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>terra labs</title>
+<meta name="description" content="terra labs — reading the earth across the visible, infrared, thermal, and radar spectrum.">
+<meta name="theme-color" content="#05070a">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2305070a'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23c9a876'/%3E%3Cellipse cx='16' cy='16' rx='13' ry='5.5' fill='none' stroke='%23c9a876' stroke-width='1.3' transform='rotate(-28 16 16)'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400;1,500&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #05070a;
+    --ink: #f3f0ea;
+    --ink-dim: rgba(243, 240, 234, 0.62);
+    --ink-faint: rgba(243, 240, 234, 0.38);
+    --accent: #c9a876;
+    --serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', 'Courier New', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    min-height: 100%;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection { background: rgba(201, 168, 118, 0.35); color: #fff; }
+
+  a:focus-visible, .scroll-cue:focus-visible {
+    outline: 1.5px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  #satellite-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    display: block;
+  }
+
+  .grid-overlay, .vignette, .scanlines, .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .grid-overlay {
+    z-index: 1;
+    background-image:
+      repeating-linear-gradient(to right, rgba(243,240,234,0.05) 0, rgba(243,240,234,0.05) 1px, transparent 1px, transparent 148px),
+      repeating-linear-gradient(to bottom, rgba(243,240,234,0.05) 0, rgba(243,240,234,0.05) 1px, transparent 1px, transparent 148px);
+  }
+
+  .vignette {
+    z-index: 2;
+    background:
+      radial-gradient(ellipse at center, rgba(5,7,10,0) 32%, rgba(5,7,10,0.42) 78%, rgba(5,7,10,0.88) 100%),
+      linear-gradient(rgba(5,7,10,0.55) 0%, rgba(5,7,10,0) 20%, rgba(5,7,10,0) 72%, rgba(5,7,10,0.6) 100%);
+  }
+
+  .scanlines {
+    z-index: 3;
+    opacity: 0.45;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0.05) 3px,
+      rgba(0,0,0,0) 4px
+    );
+  }
+
+  .grain {
+    z-index: 4;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    filter: url(#grainFilter);
+  }
+
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2.75rem 3rem;
+    text-shadow: 0 2px 14px rgba(0,0,0,0.55);
+  }
+
+  .logo { font-size: 1.05rem; letter-spacing: 0.01em; }
+  .logo .terra {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.3rem;
+  }
+  .logo .labs {
+    font-family: var(--sans);
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    margin-left: 0.5em;
+    font-size: 0.78rem;
+    vertical-align: 2px;
+  }
+
+  nav { display: flex; gap: 2.75rem; }
+  nav a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    transition: color 0.35s ease;
+  }
+  nav a:hover { color: var(--ink); }
+
+  main.hero {
+    position: relative;
+    z-index: 5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7rem 1.75rem 5rem;
+  }
+
+  .definition {
+    text-align: center;
+    max-width: 600px;
+    padding: 3.25rem 3rem;
+    background: rgba(5, 8, 12, 0.34);
+    backdrop-filter: blur(26px) saturate(1.15);
+    -webkit-backdrop-filter: blur(26px) saturate(1.15);
+    border: 1px solid rgba(243, 240, 234, 0.07);
+  }
+
+  .definition .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.6rem;
+  }
+
+  .definition .headword {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(3.2rem, 8vw, 5.5rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.85rem;
+  }
+
+  .definition .pronunciation {
+    font-family: var(--mono);
+    font-size: 0.92rem;
+    color: var(--ink-dim);
+    margin-bottom: 0.55rem;
+    letter-spacing: 0.01em;
+  }
+
+  .definition .pos {
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+    margin-bottom: 1.9rem;
+  }
+
+  .divider {
+    width: 36px;
+    height: 1px;
+    background: var(--accent);
+    opacity: 0.55;
+    margin: 0 auto 1.9rem;
+  }
+
+  .meanings {
+    list-style: none;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.28rem;
+    line-height: 2.05;
+    margin-bottom: 2rem;
+    text-align: left;
+    display: inline-block;
+  }
+  .meanings .num {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent);
+    margin-right: 0.7em;
+  }
+
+  .etymology {
+    font-family: var(--sans);
+    font-size: 0.79rem;
+    line-height: 1.75;
+    color: var(--ink-faint);
+    letter-spacing: 0.01em;
+  }
+  .etymology em { font-family: var(--serif); font-style: italic; color: var(--ink-dim); }
+
+  .telemetry, .clock {
+    position: fixed;
+    bottom: 2.5rem;
+    z-index: 10;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+  }
+  .telemetry {
+    left: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--ink-dim);
+  }
+  .telemetry .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .telemetry .sep { opacity: 0.4; }
+  .clock { right: 3rem; color: var(--ink-faint); }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  .scroll-cue {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: inline-flex;
+    padding: 0.6rem;
+    color: var(--ink-faint);
+    animation: bob 2.6s ease-in-out infinite;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+  }
+  @keyframes bob {
+    0%, 100% { transform: translate(-50%, 0); }
+    50% { transform: translate(-50%, 7px); }
+  }
+
+  .mission {
+    position: relative;
+    z-index: 5;
+    background: var(--bg);
+    padding: 9rem 2rem;
+    text-align: center;
+    border-top: 1px solid rgba(243, 240, 234, 0.06);
+  }
+  .mission .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.75rem;
+  }
+  .mission p {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(1.6rem, 3.4vw, 2.5rem);
+    line-height: 1.5;
+    max-width: 780px;
+    margin: 0 auto;
+    color: var(--ink);
+  }
+  .mission p em { font-style: italic; }
+
+  footer {
+    position: relative;
+    z-index: 5;
+    background: var(--bg);
+    padding: 2.5rem 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    color: var(--ink-faint);
+    border-top: 1px solid rgba(243, 240, 234, 0.06);
+  }
+  footer a { color: var(--ink-faint); text-decoration: none; transition: color 0.3s ease; }
+  footer a:hover { color: var(--accent); }
+
+  @media (max-width: 680px) {
+    header { padding: 1.6rem 1.4rem; }
+    .logo .terra { font-size: 1.1rem; }
+    nav { gap: 1.4rem; }
+    nav a { font-size: 0.64rem; letter-spacing: 0.1em; }
+    .definition { padding: 2.25rem 1.5rem; }
+    .meanings { font-size: 1.1rem; }
+    .telemetry, .clock { display: none; }
+    .mission { padding: 6rem 1.5rem; }
+    footer { padding: 2rem 1.4rem; flex-direction: column; text-align: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-cue { animation: none; }
+    .telemetry .dot { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="satellite-canvas" aria-hidden="true"></canvas>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="grainFilter">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" result="noise"/>
+    <feColorMatrix in="noise" type="matrix"
+      values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0"/>
+  </filter>
+</svg>
+
+<div class="grid-overlay" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<header>
+  <div class="logo"><span class="terra">terra</span><span class="labs">labs</span></div>
+  <nav>
+    <a href="#mission">Mission</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<main class="hero">
+  <div class="definition">
+    <div class="eyebrow">Etymology</div>
+    <h1 class="headword" lang="la">terra</h1>
+    <div class="pronunciation">/ˈtɛr.ra/ · TERR-ah</div>
+    <div class="pos">noun · feminine · first declension</div>
+    <div class="divider"></div>
+    <ol class="meanings">
+      <li><span class="num">I.</span>the earth; the world</li>
+      <li><span class="num">II.</span>land, ground, soil</li>
+      <li><span class="num">III.</span>a country, region, territory</li>
+    </ol>
+    <p class="etymology">Root of the English <em>terrain</em>, <em>terrestrial</em>, and <em>territory</em>.</p>
+  </div>
+</main>
+
+<div class="telemetry">
+  <span class="dot"></span>
+  <span id="mode-label">VISIBLE</span>
+  <span class="sep">·</span>
+  <span id="mode-counter">01 / 04</span>
+</div>
+<div class="clock" id="clock-readout">00:00:00 UTC</div>
+
+<a class="scroll-cue" href="#mission" aria-label="Scroll to mission">
+  <svg width="18" height="10" viewBox="0 0 18 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1 1L9 9L17 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</a>
+
+<section class="mission" id="mission">
+  <div class="eyebrow">Mission</div>
+  <p>Every name is a thesis. Ours points down — to the ground, the world, the thing itself. <em>terra</em> labs reads the earth across the visible, infrared, thermal, and radar spectrum, and turns signal into understanding.</p>
+</section>
+
+<footer id="contact">
+  <span>© 2026 terra labs. All rights reserved.</span>
+  <a href="mailto:hello@terralabs.io">hello@terralabs.io</a>
+</footer>
+
+<script>
+(() => {
+  const canvas = document.getElementById('satellite-canvas');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, dpr = 1;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = canvas.width = Math.floor(window.innerWidth * dpr);
+    H = canvas.height = Math.floor(window.innerHeight * dpr);
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const NUM_BLOBS = 13;
+  const blobs = [];
+  for (let i = 0; i < NUM_BLOBS; i++) {
+    blobs.push({
+      bx: Math.random(),
+      by: Math.random(),
+      r: 0.14 + Math.random() * 0.20,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.15 + Math.random() * 0.25,
+      driftX: (Math.random() - 0.5) * 0.00006,
+      driftY: (Math.random() - 0.5) * 0.00004,
+      baseIntensity: Math.random(),
+      breathe: 0.1 + Math.random() * 0.2,
+      breatheSpeed: 0.08 + Math.random() * 0.1,
+    });
+  }
+
+  function paletteOf(bg, stops) { return { bg: bg, stops: stops }; }
+
+  const palettes = {
+    visible: paletteOf([5, 10, 17], [
+      [0.00, [6, 20, 38]],
+      [0.30, [12, 46, 74]],
+      [0.55, [45, 98, 118]],
+      [0.72, [128, 160, 160]],
+      [0.85, [206, 212, 208]],
+      [1.00, [250, 249, 245]],
+    ]),
+    infrared: paletteOf([7, 5, 12], [
+      [0.00, [8, 6, 18]],
+      [0.25, [42, 12, 56]],
+      [0.50, [112, 20, 70]],
+      [0.70, [198, 52, 40]],
+      [0.85, [233, 122, 26]],
+      [1.00, [255, 210, 82]],
+    ]),
+    temperature: paletteOf([8, 13, 26], [
+      [0.00, [16, 26, 92]],
+      [0.25, [20, 92, 150]],
+      [0.45, [40, 150, 140]],
+      [0.60, [178, 188, 62]],
+      [0.75, [228, 148, 40]],
+      [1.00, [208, 40, 36]],
+    ]),
+    radar: paletteOf([4, 9, 6], [
+      [0.00, [5, 20, 12]],
+      [0.30, [15, 60, 25]],
+      [0.50, [50, 130, 40]],
+      [0.68, [188, 193, 40]],
+      [0.82, [218, 128, 30]],
+      [1.00, [198, 40, 34]],
+    ]),
+  };
+
+  const modeStyle = {
+    visible:     { radiusMul: 1.00, alphaMul: 0.85, posterize: 0 },
+    infrared:    { radiusMul: 0.60, alphaMul: 1.00, posterize: 0 },
+    temperature: { radiusMul: 1.35, alphaMul: 0.75, posterize: 0 },
+    radar:       { radiusMul: 0.42, alphaMul: 1.00, posterize: 7 },
+  };
+
+  const modeOrder = ['visible', 'infrared', 'temperature', 'radar'];
+  const modeLabels = { visible: 'VISIBLE', infrared: 'INFRARED', temperature: 'TEMPERATURE', radar: 'RADAR' };
+  let modeIndex = 0;
+  let modeStart = performance.now();
+  const MODE_DURATION = 8500;
+  const TRANSITION_DURATION = 2500;
+
+  const labelEl = document.getElementById('mode-label');
+  const counterEl = document.getElementById('mode-counter');
+
+  function updateModeUI() {
+    const name = modeOrder[modeIndex];
+    if (labelEl) labelEl.textContent = modeLabels[name];
+    if (counterEl) counterEl.textContent = String(modeIndex + 1).padStart(2, '0') + ' / 04';
+  }
+  updateModeUI();
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function lerpColor(c1, c2, t) {
+    return [lerp(c1[0], c2[0], t), lerp(c1[1], c2[1], t), lerp(c1[2], c2[2], t)];
+  }
+  function colorAt(stops, v) {
+    v = Math.max(0, Math.min(1, v));
+    for (let i = 0; i < stops.length - 1; i++) {
+      const p0 = stops[i][0], c0 = stops[i][1];
+      const p1 = stops[i + 1][0], c1 = stops[i + 1][1];
+      if (v >= p0 && v <= p1) {
+        const t = (p1 - p0) > 0 ? (v - p0) / (p1 - p0) : 0;
+        return lerpColor(c0, c1, t);
+      }
+    }
+    return stops[stops.length - 1][1];
+  }
+
+  function drawRadarOverlay(alpha, now) {
+    if (alpha <= 0.01) return;
+    const cx = W / 2, cy = H / 2;
+    const maxR = Math.hypot(W, H) * 0.42;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = 'rgba(190,225,205,0.16)';
+    ctx.lineWidth = Math.max(1, dpr);
+    for (let i = 1; i <= 4; i++) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, (maxR * i) / 4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(cx - maxR, cy); ctx.lineTo(cx + maxR, cy);
+    ctx.moveTo(cx, cy - maxR); ctx.lineTo(cx, cy + maxR);
+    ctx.stroke();
+
+    if (!reduceMotion) {
+      const sweepAngle = (now * 0.00045) % (Math.PI * 2);
+      const trail = Math.PI * 0.32;
+      const steps = 36;
+      for (let i = 0; i < steps; i++) {
+        const a = sweepAngle - (i / steps) * trail;
+        const localAlpha = (1 - i / steps) * 0.45;
+        ctx.strokeStyle = `rgba(175,250,200,${localAlpha})`;
+        ctx.lineWidth = Math.max(1, 1.6 * dpr);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a) * maxR, cy + Math.sin(a) * maxR);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  function frame(now) {
+    const elapsed = now - modeStart;
+    const currentName = modeOrder[modeIndex];
+    const currentPalette = palettes[currentName];
+    const currentStyle = modeStyle[currentName];
+
+    let blendT = 0;
+    let nextName = null, nextPalette = null, nextStyle = null;
+
+    if (elapsed > MODE_DURATION) {
+      const t = Math.min(1, (elapsed - MODE_DURATION) / TRANSITION_DURATION);
+      blendT = t;
+      nextName = modeOrder[(modeIndex + 1) % modeOrder.length];
+      nextPalette = palettes[nextName];
+      nextStyle = modeStyle[nextName];
+      if (t >= 1) {
+        modeIndex = (modeIndex + 1) % modeOrder.length;
+        modeStart = now;
+        updateModeUI();
+        blendT = 0; nextName = null; nextPalette = null; nextStyle = null;
+      }
+    }
+
+    let bg = currentPalette.bg;
+    if (nextPalette) bg = lerpColor(currentPalette.bg, nextPalette.bg, blendT);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = `rgb(${bg[0] | 0},${bg[1] | 0},${bg[2] | 0})`;
+    ctx.fillRect(0, 0, W, H);
+
+    const minDim = Math.min(W, H);
+    const t = now * 0.001;
+
+    let radiusMul = currentStyle.radiusMul;
+    let alphaMul = currentStyle.alphaMul;
+    let posterize = currentStyle.posterize;
+    if (nextStyle) {
+      radiusMul = lerp(currentStyle.radiusMul, nextStyle.radiusMul, blendT);
+      alphaMul = lerp(currentStyle.alphaMul, nextStyle.alphaMul, blendT);
+      posterize = blendT < 0.5 ? currentStyle.posterize : nextStyle.posterize;
+    }
+
+    ctx.globalCompositeOperation = 'lighter';
+    blobs.forEach((b) => {
+      const drift = reduceMotion ? 0 : t;
+      const x = b.bx + (reduceMotion ? 0 : Math.sin(drift * b.speed * 0.3 + b.phase) * 0.035) + drift * b.driftX;
+      const y = b.by + (reduceMotion ? 0 : Math.cos(drift * b.speed * 0.25 + b.phase) * 0.035) + drift * b.driftY;
+      const wx = ((x % 1) + 1) % 1;
+      const wy = ((y % 1) + 1) % 1;
+
+      let intensity = b.baseIntensity;
+      if (!reduceMotion) {
+        intensity += Math.sin(drift * b.breatheSpeed + b.phase) * b.breathe;
+      }
+      intensity = Math.max(0, Math.min(1, intensity));
+      if (posterize > 0) {
+        intensity = Math.round(intensity * posterize) / posterize;
+      }
+
+      const cx = wx * W, cy = wy * H;
+      const radius = b.r * minDim * radiusMul * (reduceMotion ? 1 : (1 + 0.06 * Math.sin(drift * 0.3 + b.phase)));
+
+      let col = colorAt(currentPalette.stops, intensity);
+      if (nextPalette) {
+        const col2 = colorAt(nextPalette.stops, intensity);
+        col = lerpColor(col, col2, blendT);
+      }
+      const alpha = 0.4 * alphaMul * (0.5 + 0.5 * intensity);
+
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(radius, 1));
+      grad.addColorStop(0, `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},${alpha})`);
+      grad.addColorStop(1, `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.max(radius, 1), 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+
+    let radarAlpha = 0;
+    if (currentName === 'radar') radarAlpha = nextName ? 1 - blendT : 1;
+    else if (nextName === 'radar') radarAlpha = blendT;
+    drawRadarOverlay(radarAlpha, now);
+
+    if (!document.hidden) {
+      requestAnimationFrame(frame);
+    }
+  }
+  requestAnimationFrame(frame);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) requestAnimationFrame(frame);
+  });
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function updateClock() {
+    const el = document.getElementById('clock-readout');
+    if (!el) return;
+    const d = new Date();
+    el.textContent = pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds()) + ' UTC';
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+})();
+</script>
+
+</body>
+</html>
