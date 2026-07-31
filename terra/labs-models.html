@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>terra models</title>
-<meta name="description" content="terra models — reading the earth across the visible, infrared, thermal, and radar spectrum.">
+<meta name="description" content="terra models — world models for complex systems.">
 <meta name="theme-color" content="#05070a">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2305070a'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23c9a876'/%3E%3Cellipse cx='16' cy='16' rx='13' ry='5.5' fill='none' stroke='%23c9a876' stroke-width='1.3' transform='rotate(-28 16 16)'/%3E%3C/svg%3E">
 
@@ -105,7 +105,7 @@
     text-shadow: 0 2px 14px rgba(0,0,0,0.55);
   }
 
-  .logo { font-size: 1.05rem; letter-spacing: 0.01em; }
+  .logo { font-size: 1.05rem; letter-spacing: 0.01em; display: inline-flex; align-items: baseline; }
   .logo .terra {
     font-family: var(--serif);
     font-style: italic;
@@ -115,10 +115,9 @@
   .logo .models {
     font-family: var(--sans);
     font-weight: 500;
-    letter-spacing: 0.24em;
-    margin-left: 0.5em;
-    font-size: 0.78rem;
-    vertical-align: 2px;
+    letter-spacing: 0.14em;
+    margin-left: 0.45em;
+    font-size: 0.92rem;
   }
 
   nav { display: flex; gap: 2.75rem; }
@@ -162,13 +161,22 @@
   }
 
   .definition .headword {
+    line-height: 1;
+    margin-bottom: 0.85rem;
+  }
+  .definition .headword .word-terra {
     font-family: var(--serif);
     font-style: italic;
     font-weight: 500;
     font-size: clamp(3.2rem, 8vw, 5.5rem);
-    line-height: 1;
     letter-spacing: -0.01em;
-    margin-bottom: 0.85rem;
+  }
+  .definition .headword .word-models {
+    font-family: var(--sans);
+    font-style: normal;
+    font-weight: 500;
+    font-size: clamp(2.25rem, 5.65vw, 3.9rem);
+    letter-spacing: 0.01em;
   }
 
   .definition .pronunciation {
@@ -315,6 +323,7 @@
   @media (max-width: 680px) {
     header { padding: 1.6rem 1.4rem; }
     .logo .terra { font-size: 1.1rem; }
+    .logo .models { font-size: 0.78rem; }
     nav { gap: 1.4rem; }
     nav a { font-size: 0.64rem; letter-spacing: 0.1em; }
     .definition { padding: 2.25rem 1.5rem; }
@@ -358,9 +367,9 @@
 <main class="hero">
   <div class="definition">
     <div class="eyebrow">Etymology</div>
-    <h1 class="headword" lang="la">terra</h1>
+    <h1 class="headword"><span class="word-terra" lang="la">terra</span> <span class="word-models">models</span></h1>
     <div class="pronunciation">/ˈtɛr.ra/ · TERR-ah</div>
-    <div class="pos">noun · feminine · first declension</div>
+    <div class="pos">noun</div>
     <div class="divider"></div>
     <ol class="meanings">
       <li><span class="num">I.</span>the earth; the world</li>
@@ -387,12 +396,12 @@
 
 <section class="mission" id="mission">
   <div class="eyebrow">Mission</div>
-  <p>Our mission is to build <em>terra</em> models for complex systems</p>
+  <p>Every name is a thesis. Ours points down — to the ground, the world, the thing itself. <em>terra</em> models builds world models for complex systems, reading the earth across the visible, infrared, thermal, and radar spectrum to turn signal into understanding.</p>
 </section>
 
 <footer id="contact">
   <span>© 2026 terra models. All rights reserved.</span>
-  <a href="mailto:hello@terramodels.ai">hello@terralabs.ai</a>
+  <a href="mailto:hello@terramodels.io">hello@terramodels.io</a>
 </footer>
 
 <script>
@@ -508,42 +517,6 @@
     return stops[stops.length - 1][1];
   }
 
-  function drawRadarOverlay(alpha, now) {
-    if (alpha <= 0.01) return;
-    const cx = W / 2, cy = H / 2;
-    const maxR = Math.hypot(W, H) * 0.42;
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = 'rgba(190,225,205,0.16)';
-    ctx.lineWidth = Math.max(1, dpr);
-    for (let i = 1; i <= 4; i++) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, (maxR * i) / 4, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    ctx.beginPath();
-    ctx.moveTo(cx - maxR, cy); ctx.lineTo(cx + maxR, cy);
-    ctx.moveTo(cx, cy - maxR); ctx.lineTo(cx, cy + maxR);
-    ctx.stroke();
-
-    if (!reduceMotion) {
-      const sweepAngle = (now * 0.00045) % (Math.PI * 2);
-      const trail = Math.PI * 0.32;
-      const steps = 36;
-      for (let i = 0; i < steps; i++) {
-        const a = sweepAngle - (i / steps) * trail;
-        const localAlpha = (1 - i / steps) * 0.45;
-        ctx.strokeStyle = `rgba(175,250,200,${localAlpha})`;
-        ctx.lineWidth = Math.max(1, 1.6 * dpr);
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(cx + Math.cos(a) * maxR, cy + Math.sin(a) * maxR);
-        ctx.stroke();
-      }
-    }
-    ctx.restore();
-  }
-
   function frame(now) {
     const elapsed = now - modeStart;
     const currentName = modeOrder[modeIndex];
@@ -624,11 +597,6 @@
 
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
-
-    let radarAlpha = 0;
-    if (currentName === 'radar') radarAlpha = nextName ? 1 - blendT : 1;
-    else if (nextName === 'radar') radarAlpha = blendT;
-    drawRadarOverlay(radarAlpha, now);
 
     if (!document.hidden) {
       requestAnimationFrame(frame);
