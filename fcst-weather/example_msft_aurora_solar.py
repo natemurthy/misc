@@ -72,6 +72,14 @@ for v in input_surf_vars:
     else:
         surf_vars[v] = mock_field(v, 1, T, H, W)
 
+# The model does not clip user-provided first-step inputs (clamp_at_first_step=False),
+# and "scaled_*" variables are log-transformed on the way in, so even a few negative
+# mock values (e.g. scaled_sd) become NaN and poison the entire forecast. Clamp each
+# mocked variable to its valid physical range using the model's own clipping ranges.
+for v, bounds in model.rollout_input_clipping.items():
+    if v in surf_vars:
+        surf_vars[v] = surf_vars[v].clamp(min=bounds.get("min"), max=bounds.get("max"))
+
 static_vars = {v: mock_field(v, H, W) for v in model.static_vars}
 
 atmos_levels = (50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 850, 925, 1000)
@@ -82,6 +90,8 @@ atmos_vars = {
     )
     for v in model.atmos_vars
 }
+# Specific humidity must be non-negative (mocks at the top levels can dip below zero).
+atmos_vars["q"] = atmos_vars["q"].clamp(min=0)
 
 input_batch = Batch(
     surf_vars=surf_vars,
