@@ -55,6 +55,11 @@ def main():
     model = AuroraV1p5()
     model.eval()
 
+    # Same device handling as example_msft_aurora_solar.py: GPU when available.
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Using device: {device}")
+    model = model.to(device)
+
     # Tiny global grid instead of the full 721x1440 0.25-degree grid.
     latitudes = np.linspace(90, -90, 33, dtype=np.float32)
     longitudes = np.linspace(0, 354.375, 64, dtype=np.float32)
@@ -64,10 +69,12 @@ def main():
     input_batch = build_batch(model, latitudes, longitudes, init_time)
 
     print("Running hourly sub-stepped rollout...")
+    input_batch = input_batch.to(device)
     with torch.inference_mode():
-        predictions = list(
-            rollout(model, input_batch, steps=STEPS, fine_lead_times=FINE_LEAD_TIMES)
-        )
+        predictions = [
+            pred.to("cpu")
+            for pred in rollout(model, input_batch, steps=STEPS, fine_lead_times=FINE_LEAD_TIMES)
+        ]
 
     expected = STEPS * len(FINE_LEAD_TIMES)
     assert len(predictions) == expected, f"expected {expected} predictions, got {len(predictions)}"

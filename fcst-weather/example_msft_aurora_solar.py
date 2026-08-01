@@ -15,6 +15,11 @@ model = AuroraV1p5()
 model.load_checkpoint()
 model.eval()
 
+# Run inference on GPU (a2-highgpu-1g provides 1x NVIDIA A100 40GB).
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {device}")
+model = model.to(device)
+
 # 2. Define target location coordinates (San Leandro, CA)
 TARGET_LAT = 37.72
 TARGET_LON = -122.16
@@ -75,7 +80,10 @@ input_batch = Batch(
 # Aurora's base time-step is 6 hours. Aurora 1.5 supports variable lead times, so we
 # sub-step each main step hourly: 4 main steps x 6 fine lead times = 24 hourly forecasts.
 print("Running forward rollout for hourly solar irradiance forecasting...")
+input_batch = input_batch.to(device)
 with torch.inference_mode():
+    # Inference runs on the GPU; each prediction is offloaded to CPU as it is produced
+    # so the 24 global-grid forecasts don't accumulate in GPU memory during the rollout.
     predictions = [
         pred.to("cpu")
         for pred in rollout(model, input_batch, steps=4, fine_lead_times=[1, 2, 3, 4, 5, 6])
