@@ -9,8 +9,11 @@ with random weights); this only validates shapes, variables, and the hourly roll
 from datetime import datetime, timedelta, timezone
 
 import numpy as np
+import structlog
 import torch
 from aurora import AuroraV1p5, Batch, Metadata, insolation, rollout
+
+log = structlog.get_logger()
 
 STEPS = 2
 FINE_LEAD_TIMES = [1, 2, 3, 4, 5, 6]
@@ -51,13 +54,13 @@ def build_batch(model, latitudes, longitudes, init_time):
 
 
 def main():
-    print("Initializing Aurora 1.5 with random weights (no checkpoint download)...")
+    log.info("Initializing Aurora 1.5 with random weights (no checkpoint download)")
     model = AuroraV1p5()
     model.eval()
 
     # Same device handling as example_msft_aurora_solar.py: GPU when available.
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Using device: {device}")
+    log.info("Using device", device=device)
     model = model.to(device)
 
     # Tiny global grid instead of the full 721x1440 0.25-degree grid.
@@ -68,7 +71,7 @@ def main():
 
     input_batch = build_batch(model, latitudes, longitudes, init_time)
 
-    print("Running hourly sub-stepped rollout...")
+    log.info("Running hourly sub-stepped rollout")
     input_batch = input_batch.to(device)
     with torch.inference_mode():
         predictions = [
@@ -86,8 +89,12 @@ def main():
         expected_time = init_time + timedelta(hours=i)
         assert pred.metadata.time[0] == expected_time, (pred.metadata.time[0], expected_time)
 
-    print(f"OK: {len(predictions)} hourly predictions from {predictions[0].metadata.time[0]} "
-          f"to {predictions[-1].metadata.time[0]}, all containing ssrd_1h")
+    log.info(
+        "OK: all hourly predictions contain ssrd_1h",
+        num_predictions=len(predictions),
+        first_time=predictions[0].metadata.time[0],
+        last_time=predictions[-1].metadata.time[0],
+    )
 
 
 if __name__ == "__main__":

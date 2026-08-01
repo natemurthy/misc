@@ -1,15 +1,19 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
+import structlog
 import torch
 from aurora import AuroraV1p5, Batch, Metadata, insolation, rollout
+from aurora.normalisation import level_to_str, locations, scales
+
+log = structlog.get_logger()
 
 
 # pip install microsoft-aurora
 
 # 1. Initialize the Aurora 1.5 model
 # Aurora 1.5 includes surface radiation fluxes (e.g. ssrd_1h) and prescribed solar insolation.
-print("Loading Aurora 1.5 Foundation Model...")
+log.info("Loading Aurora 1.5 Foundation Model")
 model = AuroraV1p5()
 # Downloads the pretrained Aurora 1.5 checkpoint from HuggingFace (ikwessel/aurora-1.5).
 model.load_checkpoint()
@@ -17,7 +21,7 @@ model.eval()
 
 # Run inference on GPU (a2-highgpu-1g provides 1x NVIDIA A100 40GB).
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Using device: {device}")
+log.info("Using device", device=device)
 model = model.to(device)
 
 # 2. Define target location coordinates (San Leandro, CA)
@@ -40,8 +44,17 @@ lon_idx = np.abs(longitudes - lon_360).argmin()
 # 4. Mock the required atmospheric input tensors
 # In practice, you would load real atmospheric initial states from ERA5 or IFS via cdsapi.
 # The model needs a 2-step history; `time` in the metadata is the time of the *last* step.
+#
+# Mock values are sampled near each variable's normalisation statistics: uniform values
+# in [0, 1) are hundreds of standard deviations out of distribution for physical fields
+# like msl (~101,325 Pa), which blows up activations under fp16 autocast and yields NaNs.
+def mock_field(name, *shape):
+    return locations[name] + 0.1 * scales[name] * torch.randn(*shape)
+
+
 T = 2
-init_time = datetime(2026, 7, 18, 6)
+# Current UTC time truncated to the hour; Aurora metadata times are naive UTC.
+init_time = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0, tzinfo=None)
 history_times = [init_time - timedelta(hours=6), init_time]
 
 # Input surface variables are the model's surface variables minus the output-only ones
@@ -57,12 +70,18 @@ for v in input_surf_vars:
         )
         surf_vars[v] = torch.tensor(sol, dtype=torch.float32)[None]  # (1, T, H, W)
     else:
-        surf_vars[v] = torch.rand(1, T, H, W)
+        surf_vars[v] = mock_field(v, 1, T, H, W)
 
-static_vars = {v: torch.rand(H, W) for v in model.static_vars}
+static_vars = {v: mock_field(v, H, W) for v in model.static_vars}
 
 atmos_levels = (50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 850, 925, 1000)
-atmos_vars = {v: torch.rand(1, T, len(atmos_levels), H, W) for v in model.atmos_vars}
+# Atmospheric normalisation statistics are per pressure level, keyed "{var}_{level}".
+atmos_vars = {
+    v: torch.stack(
+        [mock_field(f"{v}_{level_to_str(l)}", 1, T, H, W) for l in atmos_levels], dim=2
+    )
+    for v in model.atmos_vars
+}
 
 input_batch = Batch(
     surf_vars=surf_vars,
@@ -79,7 +98,7 @@ input_batch = Batch(
 # 5. Execute Rollout Prediction
 # Aurora's base time-step is 6 hours. Aurora 1.5 supports variable lead times, so we
 # sub-step each main step hourly: 4 main steps x 6 fine lead times = 24 hourly forecasts.
-print("Running forward rollout for hourly solar irradiance forecasting...")
+log.info("Running forward rollout for hourly solar irradiance forecasting")
 input_batch = input_batch.to(device)
 with torch.inference_mode():
     # Inference runs on the GPU; each prediction is offloaded to CPU as it is produced
@@ -92,9 +111,13 @@ with torch.inference_mode():
 # 6. Extract surface solar radiation for your coordinates
 # "ssrd_1h" is surface shortwave (solar) radiation downwards, accumulated over the
 # preceding hour in J/m^2; dividing by 3600 s gives the mean flux in W/m^2.
-print(f"\n--- Solar Irradiance Forecast for Lat {TARGET_LAT}, Lon {TARGET_LON} ---")
+log.info("Solar irradiance forecast", lat=TARGET_LAT, lon=TARGET_LON)
 for pred in predictions:
     valid_time = pred.metadata.time[0]
     # Tensor shape mapping: (batch, time, lat, lon)
     ssrd_joules = pred.surf_vars["ssrd_1h"][0, 0, lat_idx, lon_idx].item()
-    print(f"{valid_time:%Y-%m-%d %H:%M} UTC: Predicted GHI = {ssrd_joules / 3600:.1f} W/m^2")
+    log.info(
+        "Predicted GHI",
+        valid_time=f"{valid_time:%Y-%m-%d %H:%M} UTC",
+        ghi_w_m2=round(ssrd_joules / 3600, 1),
+    )
