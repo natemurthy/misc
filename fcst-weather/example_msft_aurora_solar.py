@@ -120,14 +120,15 @@ with torch.inference_mode():
 
 # 6. Extract surface solar radiation for your coordinates
 # "ssrd_1h" is surface shortwave (solar) radiation downwards, accumulated over the
-# preceding hour in J/m^2; dividing by 3600 s gives the mean flux in W/m^2.
+# preceding hour in J/m^2; dividing by 3600 s gives the hourly-mean flux in W/m^2
+# (what the solar industry reports as hourly-mean GHI).
 log.info("Solar irradiance forecast", lat=TARGET_LAT, lon=TARGET_LON)
 for pred in predictions:
     valid_time = pred.metadata.time[0]
     # Tensor shape mapping: (batch, time, lat, lon)
     ssrd_joules = pred.surf_vars["ssrd_1h"][0, 0, lat_idx, lon_idx].item()
     log.info(
-        "Predicted GHI",
+        "Predicted hourly mean SSRD",
         valid_time=f"{valid_time:%Y-%m-%d %H:%M} UTC",
-        ghi_w_m2=round(ssrd_joules / 3600, 1),
+        ssrd_w_m2=round(ssrd_joules / 3600, 1),
     )
