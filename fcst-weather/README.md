@@ -19,12 +19,54 @@ Just a reminder that the Aurora model, which has 1.3 billion parameters, is 5.7x
 
 ## Microsoft Aurora
 
-Files: `example_msft_aurora_solar{_test}.py`
+Files: `example_msft_aurora_{prefetch,solar,solar_test}.py`
 
 Aurora 1.5 uses a 3D Swin Transformer backbone with Perceiver encoders/decoders.
 
-So far this has been easier to work with in terms of dependency management; however, it has this strange random weights
-initiatlization step I don't fully understand. The model is also a bit larger compared the AINS ENS model.
+Downloads are split out of the inference script, mirroring the AIFS layout:
+
+```bash
+# 1. Prefetch -- always run this first. Each step is skipped when already current:
+#    the ~5 GB Aurora 1.5 checkpoint and the ~150 MB static-variables pickle (both
+#    from HuggingFace ikwessel/aurora-1.5, cached venv-independently in
+#    ~/.cache/huggingface), and the ECMWF open data initial conditions (saved to
+#    aurora_input_state.npz, ~650 MB).
+python example_msft_aurora_prefetch.py
+
+# 2. Forecast -- no network needed; resolves everything from the local caches and
+#    errors out with exit code 1 if the prefetch hasn't been run.
+python example_msft_aurora_solar.py
+```
+
+### Initial conditions: what gets downloaded, and how often
+
+The solar script originally mocked every atmospheric input with random fields sampled near the normalization
+statistics — fine for validating the plumbing (that mock path lives on in `example_msft_aurora_solar_test.py`), but
+the output was not a real forecast. It now steps forward from real initial conditions prefetched from ECMWF open
+data, the same source (and mirror machinery) as the AIFS example. Download cadence differs per artifact:
+
+- **Checkpoint (~5 GB) and static pickle (~150 MB): once.** These are the model weights and the time-invariant
+  fields (orography, land-sea mask, soil/vegetation-type one-hots); they only change if the pinned checkpoint
+  revision changes. On re-runs the prefetch resolves both offline against the local HuggingFace cache.
+- **Initial conditions (~650 MB `aurora_input_state.npz`): once per forecast, not once ever.** Aurora forecasts
+  forward from the atmospheric state at t0 and t−6h, so every new forecast wants the newest published cycle
+  (00/06/12/18 UTC daily; a cycle finishes publishing roughly 7–8 h after its nominal time — see "Open data source
+  nuances" below). The prefetch stamps the `.npz` with its cycle and skips the download when that still matches the
+  latest available cycle; the solar script warns when the saved state is more than 12 h old. Re-running the solar
+  script off the same prefetched state is free — it just re-runs the same forecast.
+
+Despite the comments in older versions of the script, this is *not* ERA5. ERA5 (via `cdsapi`) carries every input
+variable Aurora wants — including the cloud split and sea ice below — but lags real time by ~5 days and needs a CDS
+account and queue waits, which turns the script into a hindcast. That is the right tool for validating Aurora
+against recorded actuals, and the wrong one for forecasting from now; ECMWF open data is near-real-time with no
+account needed.
+
+Coverage nuances: open data publishes on Aurora's native 0.25° lat/lon grid (so none of the N320 regridding the
+AIFS prefetch needs, and only the `oper` stream — no ensemble/wave streams). It provides 14 of Aurora 1.5's 18
+input surface fields plus z/u/v/t/q on all 13 pressure levels. The four fields it lacks — the low/mid/high
+cloud-cover split (`lcc`/`mcc`/`hcc`; only *total* cloud cover is published, which is real here via `tcc`) and
+sea-ice concentration (`ci`) — are filled with their normalisation means (i.e. climatology) by the solar script.
+The real total-cloud and humidity signal is what matters most for SSRD.
 
 Aurora 1.5 produces hourly output natively: its variable lead-time embeddings let each 6-hour backbone step be
 sub-stepped hourly (`fine_lead_times=[1..6]`), so `example_msft_aurora_solar.py` logs 24 hourly-mean SSRD values.
@@ -130,3 +172,45 @@ disaggregation to its own 6 h windows as a post-processing step (importing `disa
 script), so both pipelines end in hourly values — the difference is cloud timing: AIFS smears it across 6 h
 windows, IFS HRES across 3 h windows. Looping AIFS over ensemble members would additionally give probabilistic
 hourly values.
+
+
+## Amazon Chronos-2
+
+Files: `example_amzn_chronos2_{prefetch,solar}.py`
+
+Chronos-2 is a pretrained time-series foundation model (~120M parameters), not a weather model: it forecasts the
+next 24 hours of SSRD purely from the last 30 days of hourly shortwave radiation at the target point, pulled from
+the Open-Meteo API at runtime. No gridded atmospheric initial states, no prefetch step, and no GPU needed — CPU
+inference takes seconds at this context length (720 points). Output is natively probabilistic: the script logs the
+median plus the 0.1/0.9 quantiles (an 80% prediction interval) per hour.
+
+### Setup (uv)
+
+Dependency management is the easiest of the three — everything has plain wheels, so any recent Python works
+(no flash-attn / CUDA pinning like AIFS):
+
+```bash
+uv venv ~/.venv-chronos2
+source ~/.venv-chronos2/bin/activate
+
+uv pip install "chronos-forecasting>=2.0" requests structlog
+```
+
+`chronos-forecasting` pulls in `torch` (CPU wheel is fine); `>=2.0` is required for `Chronos2Pipeline`.
+
+### Running
+
+```bash
+# 1. Prefetch -- downloads the ~480 MB checkpoint from HuggingFace (amazon/chronos-2,
+#    cached venv-independently in ~/.cache/huggingface); skipped when already cached.
+python example_amzn_chronos2_prefetch.py
+
+# 2. Forecast -- loads the model from the local cache only; errors out with exit
+#    code 1 if the prefetch hasn't been run.
+python example_amzn_chronos2_solar.py
+```
+
+The forecast script still needs the network for one thing: each run fetches the 30-day SSRD history from
+Open-Meteo (no API key required) — that data is per-run current by design, unlike the model weights.
+Open-Meteo's `shortwave_radiation` is already the hourly-mean flux in W/m² over the preceding hour, so the
+logged values are directly comparable to the Aurora and IFS examples' hour-ending `ssrd_w_m2` output.
