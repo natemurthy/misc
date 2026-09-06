@@ -1,4 +1,4 @@
-# mpd-cart-pole (RL)
+# mdp-cart-pole (RL)
 
 Study of the "Cart Pole" problem within the reinforcement learning (RL) school of thought.
 
