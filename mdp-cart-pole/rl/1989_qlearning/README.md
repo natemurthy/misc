@@ -18,13 +18,13 @@ This directory holds the default solution used by `main.py`, and this README als
 TD(λ) learns the value of *states*, $V(s)$, and needs a model $f(s, a)$ to compare the actions available from a state. Watkins' idea was to learn the value of *state-action pairs* instead:
 
 $$
-Q^*(s, a) = \text{expected return from taking } a \text{ in } s \text{ and acting optimally afterwards.}
+Q^{\ast}(s, a) = \text{expected return from taking } a \text{ in } s \text{ and acting optimally afterwards.}
 $$
 
 With $Q$ in hand the greedy action is $\arg\max_a Q(s, a)$, a table lookup. No model, no lookahead. Two further properties fall out of the same change:
 
 - **Off-policy.** The update target uses $\max_{a'} Q(s', a')$, the value of the best next action, regardless of which action the exploring agent actually takes next. So Q-learning estimates the *optimal* value function while behaving ε-greedily. TD(λ) and the actor-critics estimate the value of the policy being followed.
-- **A theory.** Watkins showed Q-learning is a sample-based, asynchronous form of value iteration from dynamic programming, and Watkins and Dayan proved it converges to $Q^*$ on a finite MDP if every pair is visited infinitely often and the step sizes decay appropriately. This is the point where reinforcement learning and dynamic programming become one subject.
+- **A theory.** Watkins showed Q-learning is a sample-based, asynchronous form of value iteration from dynamic programming, and Watkins and Dayan proved it converges to $Q^{\ast}$ on a finite MDP if every pair is visited infinitely often and the step sizes decay appropriately. This is the point where reinforcement learning and dynamic programming become one subject.
 
 The rest of this file gives the MDP, the Bellman equation Q-learning solves, the concrete algorithm, and the physical reasons behind the problem's bounds.
 
@@ -68,23 +68,23 @@ A note on words. The per-step +1 is the *reward*. Its sum over an episode is wha
 
 ### Bellman optimality
 
-The optimal action-value function $Q^*(s, a)$ is the expected return from taking $a$ in $s$ and acting optimally thereafter. It is the unique fixed point of the Bellman optimality equation, which for this deterministic environment reads
+The optimal action-value function $Q^{\ast}(s, a)$ is the expected return from taking $a$ in $s$ and acting optimally thereafter. It is the unique fixed point of the Bellman optimality equation, which for this deterministic environment reads
 
 $$
-Q^*(s, a) =
+Q^{\ast}(s, a) =
 \begin{cases}
 1, & f(s, a) \in \mathcal S_{\text{term}} \\
-1 + \gamma \max_{a'} Q^*\big(f(s, a), a'\big), & \text{otherwise.}
+1 + \gamma \max_{a'} Q^{\ast}\big(f(s, a), a'\big), & \text{otherwise.}
 \end{cases}
 $$
 
-The optimal policy is greedy with respect to $Q^*$:
+The optimal policy is greedy with respect to $Q^{\ast}$:
 
 $$
-\pi^*(s) = \arg\max_{a \in \{0, 1\}} Q^*(s, a).
+\pi^{\ast}(s) = \arg\max_{a \in \{0, 1\}} Q^{\ast}(s, a).
 $$
 
-Every solution in this repository is trying to find $\pi^*$ for this one equation. They differ in what they estimate (a state value, an action value, or the policy directly) and in whether they use $f$.
+Every solution in this repository is trying to find $\pi^{\ast}$ for this one equation. They differ in what they estimate (a state value, an action value, or the policy directly) and in whether they use $f$.
 
 ### Model-free, off-policy, tabular Q-learning
 
@@ -131,7 +131,7 @@ after $k$ completed episodes, so exploration decays from 1 to its floor over rou
 
 **Checkpoint selection.** Tabular Q-learning with a constant step size and aggregated states does not converge monotonically, so the training loop keeps the Q-table from the episode with the highest 100-episode moving-average return and saves that.
 
-**Convergence.** Watkins' theorem guarantees $Q \to Q^*$ for a finite MDP when every state-action pair is visited infinitely often and step sizes satisfy the Robbins-Monro conditions. Neither holds exactly here: $\alpha$ is constant and $\phi$ makes the aggregated process only approximately Markov. In practice the learned table is a good approximation of $Q^*$ on the discretized problem, which is all inference needs.
+**Convergence.** Watkins' theorem guarantees $Q \to Q^{\ast}$ for a finite MDP when every state-action pair is visited infinitely often and step sizes satisfy the Robbins-Monro conditions. Neither holds exactly here: $\alpha$ is constant and $\phi$ makes the aggregated process only approximately Markov. In practice the learned table is a good approximation of $Q^{\ast}$ on the discretized problem, which is all inference needs.
 
 **If this were a neural network.** The formulation above is the same one a Deep Q-Network uses; only the function class changes. A DQN replaces the table with a parametric $Q_w(s, a)$ that reads the raw continuous state and trains $w$ by gradient descent on the squared TD error over a replay buffer $\mathcal D$,
 
