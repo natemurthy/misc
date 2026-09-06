@@ -1,4 +1,10 @@
-"""Live matplotlib view: cart/pole on top, total reward per episode on the bottom."""
+"""
+Live matplotlib view.
+
+Left column:  cart/pole on top, total reward per episode on the bottom.
+Right column: phase portrait of the pole, theta vs theta_dot, one trace per
+              rendered episode with earlier episodes fading out.
+"""
 
 import math
 import sys
@@ -15,13 +21,86 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import Rectangle  # noqa: E402
 
 
+class PhasePortrait:
+    """
+    Trajectory of each rendered episode through the (theta, theta_dot) plane.
+
+    The closed loop of plant plus policy is a dynamical system; this is its
+    state-space picture. A good policy spirals in toward the origin and then
+    chatters in a small cycle around it (bang-bang control). A failing one
+    spirals out through the +/-12 degree lines. Earlier episodes are kept at
+    fading opacity so a multi-episode run accumulates into one picture.
+    """
+
+    KEEP = 8  # episodes retained on screen
+
+    def __init__(self, ax, theta_limit_deg=12.0, theta_dot_limit=4.0):
+        self.ax = ax
+        self.theta_dot_limit = theta_dot_limit
+        ax.set_title("phase portrait (closed loop)", fontsize=10)
+        ax.set_xlabel("pole angle θ (deg)")
+        ax.set_ylabel("pole angular velocity θ̇ (rad/s)")
+        ax.set_xlim(-theta_limit_deg - 2, theta_limit_deg + 2)
+        ax.set_ylim(-theta_dot_limit, theta_dot_limit)
+        for xb in (-theta_limit_deg, theta_limit_deg):
+            ax.axvline(xb, color="#cc4444", lw=1, ls="--")  # termination
+        ax.axhline(0, color="#bbbbbb", lw=0.8)
+        ax.axvline(0, color="#bbbbbb", lw=0.8)
+        ax.plot([0], [0], "+", color="#222222", ms=10, mew=1.5)  # upright, at rest
+        ax.grid(alpha=0.3)
+        self.label = ax.text(0.02, 0.98, "", transform=ax.transAxes, va="top", fontsize=9)
+        (self.head,) = ax.plot([], [], "o", color="#d38b2c", ms=6, zorder=5)
+        self.traces = []  # Line2D per retained episode, oldest first
+        self.current_episode = None
+        self.xs, self.ys = [], []
+
+    def _new_trace(self, episode):
+        for k, line in enumerate(reversed(self.traces)):
+            line.set_alpha(max(0.08, 0.5 * 0.7**k))
+            line.set_linewidth(0.9)
+        (line,) = self.ax.plot([], [], color="#3b6ea5", lw=1.4, alpha=1.0, zorder=4)
+        self.traces.append(line)
+        while len(self.traces) > self.KEEP:
+            self.traces.pop(0).remove()
+        self.current_episode = episode
+        self.xs, self.ys = [], []
+        self.label.set_text(f"episode {episode}")
+
+    def align_to(self, top_ax, bottom_ax):
+        """
+        Match this axes' vertical extent to the drawn boxes of two stacked axes.
+        Axes with a fixed aspect ratio (the cart/pole panel, an image) shrink
+        inside their grid cell at draw time, so the grid cell's top is not where
+        the panel's top actually is. Call after layout and on every redraw.
+        """
+        top_ax.apply_aspect()
+        bottom_ax.apply_aspect()
+        t, b, me = top_ax.get_position(), bottom_ax.get_position(), self.ax.get_position()
+        self.ax.set_position([me.x0, b.y0, me.width, t.y1 - b.y0])
+
+    def add(self, obs, episode):
+        if episode != self.current_episode:
+            self._new_trace(episode)
+        theta_deg, theta_dot = math.degrees(float(obs[2])), float(obs[3])
+        self.xs.append(theta_deg)
+        self.ys.append(theta_dot)
+        self.traces[-1].set_data(self.xs, self.ys)
+        self.head.set_data([theta_deg], [theta_dot])
+        if abs(theta_dot) > self.theta_dot_limit:  # grow the axis rather than clip the trace
+            self.theta_dot_limit = abs(theta_dot) * 1.1
+            self.ax.set_ylim(-self.theta_dot_limit, self.theta_dot_limit)
+
+
 class Renderer:
     def __init__(self, env, title="CartPole RL"):
         self.env = env
         plt.ion()
-        self.fig, (self.ax_sim, self.ax_curve) = plt.subplots(
-            2, 1, figsize=(8, 7), gridspec_kw={"height_ratios": [2, 1]}
-        )
+        self.fig = plt.figure(figsize=(14.4, 7))
+        gs = self.fig.add_gridspec(2, 2, width_ratios=[3, 3], height_ratios=[2, 1])
+        self.ax_sim = self.fig.add_subplot(gs[0, 0])
+        self.ax_curve = self.fig.add_subplot(gs[1, 0])
+        self.ax_phase = self.fig.add_subplot(gs[:, 1])  # full height of the right column
+        self.phase = PhasePortrait(self.ax_phase, math.degrees(env.theta_threshold_radians))
         self.fig.canvas.manager.set_window_title(title)
         self.fig.suptitle(title, fontsize=12)
 
@@ -57,6 +136,7 @@ class Renderer:
         self.ax_curve.legend(loc="upper left")
 
         self.fig.tight_layout()
+        self.phase.align_to(self.ax_sim, self.ax_curve)
         self.fig.show()
 
     def draw_frame(self, obs, episode, step, stats=None):
@@ -73,6 +153,7 @@ class Renderer:
             f"x={x:+.3f}  x_dot={x_dot:+.3f}\n"
             f"theta={math.degrees(theta):+.2f} deg  theta_dot={theta_dot:+.3f}"
         )
+        self.phase.add(obs, episode)
         self._flush()
 
     def update_curve(self, returns):
@@ -85,6 +166,7 @@ class Renderer:
         self._flush()
 
     def _flush(self):
+        self.phase.align_to(self.ax_sim, self.ax_curve)  # keeps alignment after a window resize
         self.fig.canvas.draw_idle()
         self.fig.canvas.flush_events()
         plt.pause(0.001)

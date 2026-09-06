@@ -28,65 +28,8 @@ With $Q$ in hand the greedy action is $\arg\max_a Q(s, a)$, a table lookup. No m
 
 The rest of this file gives the MDP, the Bellman equation Q-learning solves, the concrete algorithm, and the physical reasons behind the problem's bounds.
 
-## RL formulation
 
-### The Markov decision process
-
-The problem is the finite-horizon, discounted MDP $(\mathcal S, \mathcal A, P, R, \gamma, \rho_0)$:
-
-- **State** $s = (x, \dot x, \theta, \dot\theta) \in \mathcal S \subset \mathbb R^4$: cart position and velocity, pole angle from vertical and angular velocity.
-- **Action** $a \in \mathcal A = \{0, 1\}$: apply a horizontal force $F = -10\,\text{N}$ (push left) or $F = +10\,\text{N}$ (push right) to the cart for one time step $\tau = 0.02\,\text{s}$.
-- **Transition** $P(s' \mid s, a)$ is deterministic, $s' = f(s, a)$, given by Euler integration of the cart-pole equations of motion from [Barto, Sutton and Anderson (1983)][barto1983], without their friction terms:
-
-$$
-\ddot\theta = \frac{g\sin\theta - \cos\theta \cdot \tfrac{F + m_p l \dot\theta^2 \sin\theta}{m_c + m_p}}
-                   {l\left(\tfrac{4}{3} - \tfrac{m_p \cos^2\theta}{m_c + m_p}\right)},
-\qquad
-\ddot x = \frac{F + m_p l \dot\theta^2 \sin\theta}{m_c + m_p} - \frac{m_p l \ddot\theta \cos\theta}{m_c + m_p},
-$$
-
-$$
-x' = x + \tau\dot x,\quad \dot x' = \dot x + \tau\ddot x,\quad
-\theta' = \theta + \tau\dot\theta,\quad \dot\theta' = \dot\theta + \tau\ddot\theta,
-$$
-
-  with $g = 9.8$, cart mass $m_c = 1.0$, pole mass $m_p = 0.1$ and pole half-length $l = 0.5$. In code this is `CartPoleEnv.dynamics` in `common/env.py`.
-- **Reward** $R(s, a, s') = 1$ for every transition, including the one that terminates. Return is therefore the number of steps survived.
-- **Terminal states** $\mathcal S_{\text{term}} = \{ s : |x| > 2.4 \ \text{or}\ |\theta| > 12^\circ \}$. Episodes are also truncated at $T = 500$ steps; truncation is a horizon, not a failure, and is treated differently in the update below.
-- **Discount** $\gamma = 0.99$.
-- **Start distribution** $\rho_0$: all four components uniform in $[-0.05, 0.05]$, except that in training the angle is drawn uniformly from $[-12^\circ, 12^\circ]$ (see `--theta-range`). Changing $\rho_0$ changes which states are visited during learning but does not change $P$, $R$ or the optimal value function.
-
-The objective is to find a policy $\pi : \mathcal S \to \mathcal A$ maximizing the expected discounted return (the sum of rewards, called "total reward" in the plots)
-
-$$
-G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k+1}.
-$$
-
-Because every reward is 1, an episode that survives $n$ more steps has $G_t = (1 - \gamma^n)/(1 - \gamma)$, which saturates at $1/(1-\gamma) = 100$. So the discount gives an effective planning horizon of about 100 steps (2 s), and maximizing return is the same as surviving longer.
-
-A note on words. The per-step +1 is the *reward*. Its sum over an episode is what the literature calls the *return*. The plots and console output say "total reward" instead, since to a programmer "return" reads as a function returning.
-
-### Bellman optimality
-
-The optimal action-value function $Q^{\ast}(s, a)$ is the expected return from taking $a$ in $s$ and acting optimally thereafter. It is the unique fixed point of the Bellman optimality equation, which for this deterministic environment reads
-
-$$
-Q^{\ast}(s, a) =
-\begin{cases}
-1, & f(s, a) \in \mathcal S_{\text{term}} \\
-1 + \gamma \max_{a'} Q^{\ast}\big(f(s, a), a'\big), & \text{otherwise.}
-\end{cases}
-$$
-
-The optimal policy is greedy with respect to $Q^{\ast}$:
-
-$$
-\pi^{\ast}(s) = \arg\max_{a \in \{0, 1\}} Q^{\ast}(s, a).
-$$
-
-Every solution in this repository is trying to find $\pi^{\ast}$ for this one equation. They differ in what they estimate (a state value, an action value, or the policy directly) and in whether they use $f$.
-
-### Model-free, off-policy, tabular Q-learning
+## Tabular Q-learning
 
 This is a **model-free** method. Although $f(s, a)$ is written above, the agent never evaluates it, never learns an approximation of it, and never plans by rolling it forward. It only observes sampled transitions $(s_t, a_t, r_{t+1}, s_{t+1})$ and updates value estimates from them. The [1988](../1988_td/README.md) solution uses $f$ to act, and the [1990](../1990_dyna/README.md) solution learns an approximation of it to plan; neither is needed here.
 
@@ -150,22 +93,6 @@ a_t = \pi(s_t) = \arg\max_{a \in \{0,1\}} Q\big(\phi(s_t), a\big).
 $$
 
 That is the entire computation, a constant-time lookup. The only randomness is the environment's start state (unless `--x0`/`--theta0` are given). Exact ties, which occur only in cells the table never visited, resolve to "push left" so that a frozen policy is reproducible.
-
-### Why these ranges
-
-The bounds appear in three places: the termination thresholds that define the task, the clipping ranges used by $\phi$, and the CLI validation for `--x0`, `--theta0` and `--theta-range`. They all trace back to the physics.
-
-**Pole angle, ±12° (0.2095 rad).** This is the failure threshold from [Barto, Sutton and Anderson (1983)][barto1983] and is kept by Gymnasium. Physically it marks the region where the pole is still meaningfully "balanced":
-
-- The upright pole is an unstable equilibrium. Within ±12°, $\sin\theta \approx \theta$ to better than 1%, so the dynamics are close to the linear inverted pendulum for which stabilizing control is well posed.
-- Recoverability is a matter of torque budget. From the $\ddot\theta$ equation, gravity's angular acceleration at 12° is about 3.3 rad/s² while the cart's push can supply about 14 rad/s² in the opposite direction. The controller therefore has roughly a four-to-one margin at the edge of the band, which is why a policy trained on the full range recovers from 11° starts. Beyond the band the margin keeps shrinking, and past about 43° (where $\tan\theta = F/(m_c+m_p)g$) a single-force bang-bang controller cannot bring the pole back. The 12° threshold is a conservative task definition well inside the physical limit, not the limit itself.
-- Angular velocity matters as much as angle. A pole at 11° already falling outward at several rad/s cannot be saved even though the angle is in range. That is why $\phi$ discretizes $\dot\theta$ with more bins (16) than $\theta$ (8), and why it clips $\dot\theta$ at ±3.5 rad/s (200°/s): at that rate the pole crosses the whole 24° band in six steps, and anything faster is effectively already lost.
-
-**Cart position, ±2.4 m.** The cart runs on a finite 4.8 m track, again from the [1983 setup][barto1983]. Leaving the track is a failure. Without a position bound the agent could "balance" indefinitely by accelerating in one direction, so the bound is what makes this a balancing task rather than a chasing task. This solution's policy ignores $x$ and $\dot x$, so its only failures from valid starts are drifting off the track over a long episode. The 1983 and 1988 solutions include cart bins and do not have this failure mode.
-
-**Cart velocity, ±3 m/s.** This appears only as the clipping range of $\phi$ (unused while $\dot x$ has a single bin) and is not a physical limit. The environment never caps $\dot x$. With a 10 N force on 1.1 kg total mass the cart accelerates at about 9.1 m/s², or 0.18 m/s per step, so reaching 3 m/s from rest takes 16 steps of pushing in one direction, by which point the cart has already travelled most of the track.
-
-**Initial-state band, ±0.05.** Gymnasium's reset draws all four state variables from $[-0.05, 0.05]$ in SI units (meters, m/s, radians, rad/s), i.e. about ±2.9° of tilt. That is small enough that a trivial policy can balance for a while, which is why training on it alone produces an agent that cannot recover from an 8° start. The `--theta-range` default of 12 widens the angle draw to the whole recoverable band while leaving the velocity bands at Gymnasium's values. `--x0` and `--theta0` must be strictly inside the termination thresholds because a start exactly on or beyond them terminates before the agent acts.
 
 ## Run
 

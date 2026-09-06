@@ -51,13 +51,16 @@ import matplotlib.pyplot as plt  # noqa: E402  (parent module has chosen the bac
 # Visualization: Gymnasium's frame on top, learning curve below               #
 # --------------------------------------------------------------------------- #
 class FrameRenderer:
-    """Shows env.render() RGB frames in matplotlib alongside the learning curve."""
+    """Shows env.render() RGB frames in matplotlib alongside the learning curve and a phase portrait."""
 
     def __init__(self, title, max_return):
         plt.ion()
-        self.fig, (self.ax_img, self.ax_curve) = plt.subplots(
-            2, 1, figsize=(8, 7.5), gridspec_kw={"height_ratios": [2, 1]}
-        )
+        self.fig = plt.figure(figsize=(14.4, 7.5))
+        gs = self.fig.add_gridspec(2, 2, width_ratios=[3, 3], height_ratios=[2, 1])
+        self.ax_img = self.fig.add_subplot(gs[0, 0])
+        self.ax_curve = self.fig.add_subplot(gs[1, 0])
+        self.ax_phase = self.fig.add_subplot(gs[:, 1])  # full height of the right column
+        self.phase = tabular.PhasePortrait(self.ax_phase, theta_limit_deg=12.0)
         self.fig.canvas.manager.set_window_title(title)
         self.fig.suptitle(title, fontsize=12)
 
@@ -77,6 +80,11 @@ class FrameRenderer:
         self.fig.tight_layout()
         self.fig.show()
 
+    def _align(self):
+        # the image panel keeps its aspect ratio, so its drawn top sits below the grid cell's top
+        if self.img is not None:
+            self.phase.align_to(self.ax_img, self.ax_curve)
+
     def draw_frame(self, frame, obs, episode, step, epsilon):
         if self.img is None:
             self.img = self.ax_img.imshow(frame)
@@ -88,6 +96,7 @@ class FrameRenderer:
             f"x={x:+.3f}  x_dot={x_dot:+.3f}\n"
             f"theta={math.degrees(theta):+.2f} deg  theta_dot={theta_dot:+.3f}"
         )
+        self.phase.add(obs, episode)
         self._flush()
 
     def update_curve(self, returns):
@@ -99,6 +108,7 @@ class FrameRenderer:
         self._flush()
 
     def _flush(self):
+        self._align()
         self.fig.canvas.draw_idle()
         self.fig.canvas.flush_events()
         plt.pause(0.001)
@@ -193,7 +203,7 @@ def main():
         agent.freeze()
         print(f"[infer] loaded {args.model}; {args.episodes} greedy episodes, no learning")
 
-    title = f"CartPole RL (Gymnasium) — {'TRAINING' if training else 'INFERENCE (greedy, frozen policy)'}"
+    title = f"CartPole RL [1989_qlearning] (Gymnasium) — {'TRAINING' if training else 'INFERENCE (greedy, frozen policy)'}"
     renderer = FrameRenderer(title, max_steps) if live else None
     frame_dt = 1.0 / args.fps
     reset_options = {"x0": args.x0, "theta0": math.radians(args.theta0) if args.theta0 is not None else None}

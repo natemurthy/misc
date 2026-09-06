@@ -47,7 +47,7 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 from common import CartPoleEnv, RandomAgent  # noqa: E402
-from common.render import Renderer, plt  # noqa: E402  (chooses the matplotlib backend)
+from common.render import PhasePortrait, Renderer, plt  # noqa: E402  (chooses the matplotlib backend)
 
 SOLUTIONS = [
     "1983_actor_critic",
