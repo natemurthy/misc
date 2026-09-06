@@ -94,8 +94,8 @@ This is a **model-free** method. Although $f(s, a)$ is written above, the agent 
 
 $$
 \phi(s) = \left(
-\operatorname{round}\!\Big(7 \cdot \tfrac{\operatorname{clip}(\theta, -0.21, 0.21) + 0.21}{0.42}\Big),\;
-\operatorname{round}\!\Big(15 \cdot \tfrac{\operatorname{clip}(\dot\theta, -3.5, 3.5) + 3.5}{7}\Big)
+\mathrm{round}\!\Big(7 \cdot \tfrac{\mathrm{clip}(\theta, -0.21, 0.21) + 0.21}{0.42}\Big),\;
+\mathrm{round}\!\Big(15 \cdot \tfrac{\mathrm{clip}(\dot\theta, -3.5, 3.5) + 3.5}{7}\Big)
 \right) \in \{0..7\} \times \{0..15\}.
 $$
 

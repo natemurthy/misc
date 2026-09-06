@@ -19,7 +19,7 @@ Two "neuron-like" elements share a fixed 162-way one-hot encoding of the state, 
 **ASE, the Associative Search Element, is the actor.** It has one weight per box and emits a noisy sign:
 
 $$
-y_t = \operatorname{sign}\big(w^\top x_t + \eta_t\big),\qquad \eta_t \sim \mathcal N(0, \sigma^2),
+y_t = \mathrm{sign}\big(w^\top x_t + \eta_t\big),\qquad \eta_t \sim \mathcal N(0, \sigma^2),
 $$
 
 with $y_t = +1$ meaning push right. Its weights are updated by an eligibility trace of past (state, action) pairs, scaled by an internal reinforcement $\hat r_t$:
