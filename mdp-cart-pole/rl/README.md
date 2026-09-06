@@ -70,7 +70,6 @@ Read the READMEs in order; each explains what it improves on the one before.
 | [`1990_dyna/`](1990_dyna/README.md) | 1990 | Sutton: Dyna-Q, Q-learning plus planning on a learned model | $Q$ and a sample model | yes, learned, to plan |
 | [`1992_reinforce/`](1992_reinforce/README.md) | 1992 | Williams: REINFORCE policy gradient with a baseline | 5 policy parameters | no |
 
-The full definition of the shared MDP, the Bellman equation all six are solving, and the physical reasons behind the ±12° and ±2.4 m bounds live in [`1989_qlearning/README.md`](1989_qlearning/README.md#rl-formulation).
 
 # Results
 
@@ -84,7 +83,7 @@ Seed `[0, 5000]` training episodes with the pole started anywhere in ±12°, the
 | 1989 Q-learning | 492 | 500 | 500 | 495 | 487 | never (best 479) | 14.9 s | 346 | 54 k | 18.5 |
 | 1990 Dyna-Q | 495 | 488 | 307 | 425 | 257 | never (best 247) | 30.0 s | 170 | 25 k | 40.6 |
 | 1992 REINFORCE | 500 | 500 | 500 | 500 | 500 | 1582 | 19.5 s | 262 | 109 k | 9.2 |
-| random baseline | ~22 | | | | | | | | | |
+| random baseline (tests)| ~22 | | | | | | | | | |
 
 Train times are wall-clock for `python main.py --mode train --soln <name> --no-render` on one CPU core at 98-99% utilization, so they are also CPU time. Episodes per second is tqdm's overall rate for the same run. Both depend on how long episodes last as well as on per-step cost: a method that balances early runs 500-step episodes for most of training, so the fastest learners by wall clock are not the cheapest per step. The last two columns correct for that. Steps per second is the run's total environment steps (mean episode reward × 5000) divided by wall time, and microseconds per step is its reciprocal. By that measure the 1983 agent and REINFORCE are cheapest, at under 10 µs per step, because each step is a handful of Python operations on tiny arrays (REINFORCE only records the step and updates once per episode). Q-learning pays about twice that for several small numpy calls per step. The 1986 networks (two forward and two backward passes), the 1988 lookahead (two extra dynamics evaluations) and Dyna (five planning updates) are the most expensive. At this scale interpreter overhead dominates arithmetic, so these numbers reflect Python call counts far more than floating-point work.
 
@@ -277,13 +276,3 @@ $$
 $$
 
 Every solution in this repository is trying to find $\pi^{\ast}$ for this one equation. They differ in what they estimate (a state value, an action value, or the policy directly) and in whether they use $f$.
-
-## The optimal-control lineage (for later)
-
-Reinforcement learning and optimal control converged on the same object, the Bellman equation, from different directions, and this repository so far covers only the learning side. Threads to pick up later, in rough order:
-
-- **Dynamic programming.** Bellman (1957) and value iteration on a discretized cart-pole model: the exact solution the 1989 Q-learning approximates from samples.
-- **Linear-quadratic regulation.** Linearize the plant about the upright equilibrium and solve the Riccati equation. The resulting gain vector is a five-parameter linear controller much like the REINFORCE policy, obtained in closed form from the model instead of from data. A bang-bang version follows by taking the sign.
-- **Adaptive critics as approximate DP.** Werbos (1987 onward) framed the 1983 critic as Heuristic Dynamic Programming and proposed the DHP/GDHP family, which is the control-theory community's route to the same actor-critic architecture.
-- **Neuro-dynamic programming.** Bertsekas and Tsitsiklis (1996) consolidate both lineages under one theory.
-
