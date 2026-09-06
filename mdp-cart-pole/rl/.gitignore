@@ -2,3 +2,4 @@ __pycache__/
 *.npz
 videos/
 *.mp4
+.pytest_cache/

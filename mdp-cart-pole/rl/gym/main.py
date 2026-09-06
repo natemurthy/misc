@@ -68,11 +68,11 @@ class FrameRenderer:
         )
 
         self.ax_curve.set_xlabel("episode")
-        self.ax_curve.set_ylabel("Total reward per episode (= steps survived)")
+        self.ax_curve.set_ylabel("Total reward per episode\n(= steps survived)")
         self.ax_curve.set_ylim(0, max_return + 10)
         self.ax_curve.grid(alpha=0.3)
         (self.curve,) = self.ax_curve.plot([], [], color="#aaaaaa", lw=1, label="total reward")
-        (self.avg_curve,) = self.ax_curve.plot([], [], color="#3b6ea5", lw=2, label="100-ep avg")
+        (self.avg_curve,) = self.ax_curve.plot([], [], color="#3b6ea5", lw=2, label="100-ep mov avg")
         self.ax_curve.legend(loc="upper left")
         self.fig.tight_layout()
         self.fig.show()
