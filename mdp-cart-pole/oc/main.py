@@ -112,7 +112,7 @@ def main(argv=None):
     ctrl = mod.Agent(gains, seed=args.seed)
     env = CartPoleEnv(seed=args.seed, theta_limit_deg=args.theta_limit)
     print(f"[{args.ctrl}] gains {tuple(float(g) for g in ctrl.gains)}, theta limit {args.theta_limit} deg, {args.episodes} episodes")
-    renderer = None if args.no_render else Renderer(env, title=f"CartPole MPC [{args.ctrl}] — fixed gains, no learning")
+    renderer = None if args.no_render else Renderer(env, title=f"CartPole OC [{args.ctrl}] — fixed gains, no learning")
     totals = run_episodes(args, ctrl, env, renderer)
     if totals:
         print(f"\nmean steps {np.mean(totals):.1f} over {len(totals)} episodes; {sum(t >= 500 for t in totals)} reached the cap")

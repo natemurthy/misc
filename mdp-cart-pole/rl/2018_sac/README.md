@@ -4,7 +4,7 @@
 
 **Previous:** [2017 PPO](../2017_ppo/README.md)
 
-**Next:** end of the reinforcement-learning lineage. The hand-off to the optimal-control lineage is in [`../../mpc/README.md`](../../mpc/README.md): SAC's deterministic mean action is a graded force, directly comparable with linear state feedback and LQR on the same plant.
+**Next:** end of the reinforcement-learning lineage. The hand-off to the optimal-control lineage is in [`../../oc/README.md`](../../oc/README.md): SAC's deterministic mean action is a graded force, directly comparable with linear state feedback and LQR on the same plant.
 
 ## References
 

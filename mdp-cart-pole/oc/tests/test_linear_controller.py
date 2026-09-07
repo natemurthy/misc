@@ -1,4 +1,4 @@
-"""Tests for the hand-tuned linear bang-bang controller and the mpc/main.py driver."""
+"""Tests for the hand-tuned linear bang-bang controller and the oc/main.py driver."""
 
 import math
 import subprocess
@@ -17,7 +17,7 @@ from linear_controller.soln import (
     tune,
 )
 
-MPC_DIR = Path(__file__).resolve().parent.parent
+OC_DIR = Path(__file__).resolve().parent.parent
 
 
 def _episode(ctrl, env, theta0_deg=None, x0=None):
@@ -85,8 +85,8 @@ def test_save_load_round_trip(tmp_path):
 
 
 def run_cli(*args):
-    return subprocess.run([sys.executable, str(MPC_DIR / "main.py"), *args],
-                          cwd=MPC_DIR, capture_output=True, text=True, timeout=600)
+    return subprocess.run([sys.executable, str(OC_DIR / "main.py"), *args],
+                          cwd=OC_DIR, capture_output=True, text=True, timeout=600)
 
 
 def test_cli_run_headless():

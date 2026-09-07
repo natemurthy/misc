@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from common import normalize_obs
-from conftest import load_agent_class
+from rl_helpers import load_agent_class
 
 Agent = load_agent_class("1999_qlearning_continuous")
 

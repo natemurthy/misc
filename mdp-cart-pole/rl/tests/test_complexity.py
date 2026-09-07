@@ -7,7 +7,7 @@ import textwrap
 import pytest
 
 import complexity
-from conftest import ROOT, SOLUTIONS
+from rl_helpers import ROOT, SOLUTIONS
 
 
 def test_sloc_excludes_blanks_comments_and_docstrings(tmp_path):

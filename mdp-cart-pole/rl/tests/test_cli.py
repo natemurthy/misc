@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import ROOT, SOLUTIONS
+from rl_helpers import ROOT, SOLUTIONS
 
 MAIN = ROOT / "main.py"
 

@@ -4,7 +4,7 @@
 
 **Previous:** [1992, REINFORCE](../1992_reinforce/README.md)
 
-**Next:** [2011, neural fitted Q iteration: batch regression instead of a moving target](../2011_nfqca/README.md). The continuous force this solution introduced is also the hand-off point to the optimal-control lineage in [`../../mpc/README.md`](../../mpc/README.md).
+**Next:** [2011, neural fitted Q iteration: batch regression instead of a moving target](../2011_nfqca/README.md). The continuous force this solution introduced is also the hand-off point to the optimal-control lineage in [`../../oc/README.md`](../../oc/README.md).
 
 ## References
 
@@ -27,7 +27,7 @@ For this repository the concrete change is that the agent outputs a force $u \in
 
 ## What continuous state-action modelling buys, and what it costs
 
-The reason to accept this difficulty is realism. A real motor or thruster produces a graded force, not two values. The bang-bang solutions balance the pole by chattering between full pushes, and their phase portraits show it: a limit cycle around the origin whose width is set by how finely the policy can see the state. A continuous policy can apply a small correction to a small error and settle toward the equilibrium rather than orbit it. That is gentler on the hardware, spends less energy, and makes the controller comparable in kind to the linear state-feedback and LQR controllers in `../../mpc`, which also emit a graded force.
+The reason to accept this difficulty is realism. A real motor or thruster produces a graded force, not two values. The bang-bang solutions balance the pole by chattering between full pushes, and their phase portraits show it: a limit cycle around the origin whose width is set by how finely the policy can see the state. A continuous policy can apply a small correction to a small error and settle toward the equilibrium rather than orbit it. That is gentler on the hardware, spends less energy, and makes the controller comparable in kind to the linear state-feedback and LQR controllers in `../../oc`, which also emit a graded force.
 
 The learned Q-function is also a smooth object over actions, so the agent can reason about how good a *nearly* optimal action is, which a table over two actions cannot. This is what lets the greedy action be read off in closed form without an action grid, and what would let the same method scale to several simultaneous actuators, as in the paper's underwater vehicle.
 

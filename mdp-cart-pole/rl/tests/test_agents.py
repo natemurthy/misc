@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from common import BaseAgent, RandomAgent
-from conftest import make_env, train
+from rl_helpers import make_env, train
 
 
 def _rollout(agent, n_steps=30, seed=0):

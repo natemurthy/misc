@@ -47,10 +47,10 @@ agent.save(path); Agent.load(path); agent.freeze()    # persistence and inferenc
 ## Tests
 
 ```sh
-pytest                    # everything, about 15 s
-pytest -m fast            # unit and CLI tests only (majority of the cases) a few seconds
+pytest                    # everything in rl/tests; run from the repository root to include ../oc/tests as well
+pytest -m fast            # unit and CLI tests only (majority of the cases), runs in ~38 sec
 pytest -m slow            # only the learning tests which are annoted with @pytest.mark.slow
-pytest -k 1983            # one solution
+pytest -k 1983            # tests for just one major solution for the given year
 ```
 
 - `test_env.py` checks the MDP: reset options, the five-tuple step API, one Euler step against a hand computation, termination and truncation, the ~22-step random baseline, and, if `gymnasium` is installed, a trajectory match against the reference `CartPole-v1`.
@@ -312,7 +312,7 @@ The limits are the same thresholds that end an episode: the cart leaving the ±2
 
 `--theta-limit` raises the failure angle above the standard 12°. It applies to both modes: training episodes then start anywhere in ±`--theta-range`, which defaults to the new limit, and `--theta0` may be set anywhere inside it. Only the three solutions that read the raw scaled state accept it: `1986_actor_critic_backprop`, `1992_reinforce` and `1999_qlearning_continuous`. The 1983 BOXES decoder marks any angle past 12° as failed and the 1988, 1989 and 1990 grids clip there, so the driver refuses values above 12 for those.
 
-The useful range is bounded by the track, not the motor. The push out-accelerates gravity up to about 43°, but recovering from a wide angle means a long hard push, and the cart runs out of its ±2.4 m before the pole is upright. A hand-tuned bang-bang linear controller (see [`../mpc/`](../mpc/README.md)) recovers from at most about 34° starting at rest in the center, 37° with 1.5 m of track behind it, and 22° with 1.5 m in front. In a short experiment training on ±40° starts, REINFORCE recovered from 20° every time and from 30° three times in ten, failing by running out of track; the 1986 networks recovered from 20° most of the time; the 1999 agent did not learn with its 12° defaults but does with `--episodes 8000 --hparam hidden=64 --hparam advantage_k=0.3 --hparam lr=0.005`, recovering from 25° at the 500-step cap on three of four seeds (see its [README](1999_qlearning_continuous/README.md#wider-angles)). Beyond about 43° no push can recover the pole and the task becomes swing-up, which needs a different reward.
+The useful range is bounded by the track, not the motor. The push out-accelerates gravity up to about 43°, but recovering from a wide angle means a long hard push, and the cart runs out of its ±2.4 m before the pole is upright. A hand-tuned bang-bang linear controller (see [`../oc/`](../oc/README.md)) recovers from at most about 34° starting at rest in the center, 37° with 1.5 m of track behind it, and 22° with 1.5 m in front. In a short experiment training on ±40° starts, REINFORCE recovered from 20° every time and from 30° three times in ten, failing by running out of track; the 1986 networks recovered from 20° most of the time; the 1999 agent did not learn with its 12° defaults but does with `--episodes 8000 --hparam hidden=64 --hparam advantage_k=0.3 --hparam lr=0.005`, recovering from 25° at the 500-step cap on three of four seeds (see its [README](1999_qlearning_continuous/README.md#wider-angles)). Beyond about 43° no push can recover the pole and the task becomes swing-up, which needs a different reward.
 
 ```sh
 python main.py --mode train --soln 1992_reinforce --no-render --theta-limit 30

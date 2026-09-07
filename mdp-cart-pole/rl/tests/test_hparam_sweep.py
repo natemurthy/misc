@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from conftest import ROOT
+from rl_helpers import ROOT
 import hparam_sweep as sweep
 
 

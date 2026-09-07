@@ -1,4 +1,4 @@
-# mdp-cart-pole (MPC)
+# mdp-cart-pole (OC)
 
 TODO: study of cart pole problem solutions from the optimal control theory school of thought.
 

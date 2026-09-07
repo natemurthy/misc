@@ -18,7 +18,7 @@ minute. They are not the recommended training lengths; main.py's default is
 import numpy as np
 import pytest
 
-from conftest import evaluate, train
+from rl_helpers import evaluate, train
 
 LEARN_THRESHOLD = 100.0
 
@@ -71,7 +71,7 @@ def test_solution_learns_to_balance(agent_class, solution_name):
 def test_reinforce_recovers_beyond_12_degrees_with_wider_limit():
     """With --theta-limit 30 the linear REINFORCE policy learns to recover from a 20 degree start,
     which is inside the ~34 degree physical envelope of the 2.4 m track."""
-    from conftest import load_agent_class
+    from rl_helpers import load_agent_class
 
     agent = load_agent_class("1992_reinforce")(seed=0)
     train(agent, episodes=1500, seed=0, theta_range_deg=30.0, theta_limit_deg=30.0)
@@ -80,7 +80,7 @@ def test_reinforce_recovers_beyond_12_degrees_with_wider_limit():
 
 def test_dyna_with_zero_planning_steps_is_exactly_qlearning():
     """Dyna-Q's direct-RL path is Q-learning; with no planning the two must agree step for step."""
-    from conftest import load_agent_class
+    from rl_helpers import load_agent_class
 
     q = load_agent_class("1989_qlearning")(seed=3)
     dyna = load_agent_class("1990_dyna")(seed=3, planning_steps=0)
@@ -93,7 +93,7 @@ def test_dyna_with_zero_planning_steps_is_exactly_qlearning():
 def test_dyna_planning_performs_extra_updates():
     """With planning on, one real transition must change more of the table than the one visited cell."""
     from common import CartPoleEnv
-    from conftest import load_agent_class
+    from rl_helpers import load_agent_class
 
     dyna = load_agent_class("1990_dyna")(seed=0, planning_steps=20)
     env = CartPoleEnv(seed=0)
@@ -119,7 +119,7 @@ def test_dyna_planning_performs_extra_updates():
 def test_1988_lookahead_uses_no_model_at_learning_time(monkeypatch):
     """TD(lambda) must learn V from samples only; the model is used in act(), not in learn()."""
     from common import CartPoleEnv
-    from conftest import load_agent_class
+    from rl_helpers import load_agent_class
 
     agent = load_agent_class("1988_td")(seed=0)
     calls = {"n": 0}
