@@ -10,7 +10,7 @@ The cart-pole benchmark framed as an RL problem first appeared [Burto, Sutton, a
 
 [barto1983]: https://github.com/david78k/pendulum/blob/master/c/anderson/Neuronlike%20Adaptive%20Elements%20That%20Can%20Solve%20Difficult%20Learning%20Control%20Problems%20Barto1983.pdf
 
-There is no deep learning here in the modern sense: no framework, no GPU, and only a shallow neural network (the 1986 solution trains a small network with a single hidden layer of 16 units and are written by hand in numpy). The other solutions are linear units over fixed features (1983, 1992) or plain tables (1988, 1989, 1990). The largest learned object in the repository is a 4608-entry table.
+The 1983 to 1999 solutions have no deep learning in the modern sense: no framework, no GPU, and only shallow networks written by hand in numpy (the 1986 and 1999 solutions each train a network with a single hidden layer). The other early solutions are linear units over fixed features (1983, 1992) or plain tables (1988, 1989, 1990); the largest learned object among them is a 4608-entry table. From 2011 on the solutions are the deep-RL methods and use PyTorch on the CPU, still with small two-hidden-layer networks of 32 to 64 units, because that is all this four-dimensional problem needs.
 
 ## Gymnasium API
 
@@ -20,11 +20,13 @@ The environment class here follows Gymnasium's `Env` API: `reset(seed=, options=
 
 ```bash
 main.py                     CLI driver: --soln picks a solution, one train/infer loop for all
+hparam_sweep.py             parallel hyperparameter sweeps: configs x seeds in a process pool
 common/
-  env.py                    the CartPole MDP (Gymnasium API, no Gymnasium dependency)
+  env.py                    the CartPole MDP (Gymnasium API, no Gymnasium dependency; optional continuous force)
   features.py               state representations: grid discretizer, BOXES decoder, normalizer
   agent.py                  BaseAgent interface + RandomAgent; save/load/freeze/snapshot
   render.py                 matplotlib visualization
+  deep.py                   PyTorch helpers for the 2011-2018 solutions (CPU by default; CARTPOLE_TORCH_DEVICE to change)
 <year>_<method>/soln.py     one solution each; exposes `Agent`
 <year>_<method>/README.md   the paper, the method, what it improved, results
 tests/                      pytest suite (see below)
@@ -52,14 +54,27 @@ pytest -k 1983            # one solution
 
 - `test_env.py` checks the MDP: reset options, the five-tuple step API, one Euler step against a hand computation, termination and truncation, the ~22-step random baseline, and, if `gymnasium` is installed, a trajectory match against the reference `CartPole-v1`.
 - `test_features.py` checks the discretizers, including that the BOXES decoder produces all 162 regions with the paper's boundaries.
+- `test_wirefit.py` checks the 1999 solution's wire-fitting interpolator: it passes through the wires, peaks at the best wire, its hand-written gradients match finite differences, and the advantage-learning target reduces to Q-learning when $k = 1$.
 - `test_agents.py` runs every solution through the shared interface: valid actions, save/load round trip, frozen policies are deterministic and stop learning, snapshots restore, and identical seeds give identical training.
 - `test_learning.py` (marked `slow`) trains every solution from scratch with a small per-method episode budget and requires the frozen policy to survive at least 100 steps from the default start, about five times the random baseline. It also checks that Dyna with zero planning steps reproduces Q-learning exactly and that the 1988 agent never touches the model while learning.
 - `test_cli.py` exercises `main.py` as a subprocess: train-then-infer for every solution, argument validation, the legacy Q-table format, and that the untouched `gym/main.py` still imports this module's agents.
 
 
+## Hyperparameter sweeps
+
+`hparam_sweep.py` trains many (configuration, seed) pairs in parallel processes, headless, with the same loop and best-checkpoint rule as `main.py`, then scores each frozen policy from a few start angles and prints a table. It exists because the 1999 solution's tuning runs took minutes each; on a 12-core machine eight jobs finish in the time of the slowest one.
+
+```sh
+python hparam_sweep.py --soln 1999_qlearning_continuous --theta-limit 30 --episodes 4000 --seeds 0 1 --eval-angles 12 20 25 \
+    --config "hidden=64,advantage_k=0.3" --config "hidden=128,advantage_k=0.3,lr=0.005" --config "" \
+    --early-stop 1000:30 --json results.json
+```
+
+`--config` is repeatable and takes the same `KEY=VALUE` items as `main.py --hparam`, comma-separated; the empty string means the solution's defaults. `--early-stop EPISODE:AVG` aborts a job whose best 100-episode average is still below `AVG` at `EPISODE`, which prunes hopeless settings early (a random policy averages about 22). `--workers` defaults to one fewer than the machine's cores. Results can be written as JSON for later comparison.
+
 ## Literary history
 
-Read the READMEs in order; each explains what it improves on the one before.
+Read the READMEs in order; each explains what it improves on the one before. The 1983 to 1992 solutions and DQN, TRPO and PPO use Gymnasium's two-action version of the problem. The 1999, 2011, 2015 DDPG and 2018 SAC solutions control a continuous force anywhere in ±10 N, which the environment supports through a `continuous=True` flag with the plant, reward, thresholds and start distribution unchanged. The 1983 to 1999 solutions are numpy only; from 2011 on the methods need automatic differentiation and use PyTorch on the CPU (see `common/deep.py`), which is an optional dependency: without it those six solutions and their tests are skipped.
 
 | Directory | Year | Method | Learns | Uses a model? |
 |---|---|---|---|---|
@@ -69,6 +84,13 @@ Read the READMEs in order; each explains what it improves on the one before.
 | [`1989_qlearning/`](1989_qlearning/README.md) | 1989 | Watkins: tabular Q-learning **(default)** | action-value table $Q$ | no |
 | [`1990_dyna/`](1990_dyna/README.md) | 1990 | Sutton: Dyna-Q, Q-learning plus planning on a learned model | $Q$ and a sample model | yes, learned, to plan |
 | [`1992_reinforce/`](1992_reinforce/README.md) | 1992 | Williams: REINFORCE policy gradient with a baseline | 5 policy parameters | no |
+| [`1999_qlearning_continuous/`](1999_qlearning_continuous/README.md) | 1999 | Gaskett, Wettergreen, Zelinsky: wire-fitted neural-network Q-learning with advantage learning, **continuous force** | one small neural net producing 5 (action, value) wires | no |
+| [`2011_nfqca/`](2011_nfqca/README.md) | 2011 | Hafner, Riedmiller: neural fitted Q iteration with continuous actions, batch regression with Rprop | actor + critic nets (PyTorch) | no |
+| [`2013_dqn/`](2013_dqn/README.md) | 2013 | Mnih et al.: deep Q-network, replay + target network | Q net (PyTorch) | no |
+| [`2015_ddpg/`](2015_ddpg/README.md) | 2015 | Lillicrap et al.: deep deterministic policy gradient, **continuous force** | actor + critic nets with targets (PyTorch) | no |
+| [`2015_trpo/`](2015_trpo/README.md) | 2015 | Schulman et al.: trust region policy optimization, natural gradient with a KL constraint | policy + value nets (PyTorch) | no |
+| [`2017_ppo/`](2017_ppo/README.md) | 2017 | Schulman et al.: proximal policy optimization, clipped surrogate | policy + value nets (PyTorch) | no |
+| [`2018_sac/`](2018_sac/README.md) | 2018 | Haarnoja et al.: soft actor-critic, maximum entropy, **continuous force** | actor + twin critics + temperature (PyTorch) | no |
 
 
 # Results
@@ -83,7 +105,16 @@ Seed `[0, 5000]` training episodes with the pole started anywhere in ±12°, the
 | 1989 Q-learning | 492 | 500 | 500 | 495 | 487 | never (best 479) | 14.9 s | 346 | 54 k | 18.5 |
 | 1990 Dyna-Q | 495 | 488 | 307 | 425 | 257 | never (best 247) | 30.0 s | 170 | 25 k | 40.6 |
 | 1992 REINFORCE | 500 | 500 | 500 | 500 | 500 | 1582 | 19.5 s | 262 | 109 k | 9.2 |
+| 1999 continuous Q-learning | 500 | 500 | 500 | 500 | 500 | 3753 | 148 s † | 33.8 | 7.8 k | 128 |
+| 2011 NFQCA | 500 | 500 | 500 | 500 | 491 | 2050 | 1595 s † | 3.1 | 1.2 k | 831 |
+| 2013 DQN | 500 | 500 | 500 | 500 | 500 | never (best 385) | 246 s † | 20.3 | 3.1 k | 320 |
+| 2015 DDPG | 500 | 500 | 500 | 500 | 500 | never (best 476) | 618 s † | 8.1 | 1.6 k | 645 |
+| 2015 TRPO | 500 | 500 | 500 | 500 | 500 | 2530 | 182 s † | 27.5 | 12.2 k | 82 |
+| 2017 PPO | 500 | 500 | 500 | 500 | 500 | 512 | 363 s † | 13.8 | 6.4 k | 156 |
+| 2018 SAC | 500 | 500 | 500 | 500 | 500 | 351 | 4290 s † | 1.2 | 0.5 k | 1941 |
 | random baseline (tests)| ~22 | | | | | | | | | |
+
+† The 1999 and 2011-2018 rows were timed on a different machine from the first six (an M3 Pro, one core, PyTorch on the CPU for 2011-2018), so their wall-clock figures are indicative only; the steps-per-second and per-step figures are comparable in proportion, not in absolute value.
 
 Train times are wall-clock for `python main.py --mode train --soln <name> --no-render` on one CPU core at 98-99% utilization, so they are also CPU time. Episodes per second is tqdm's overall rate for the same run. Both depend on how long episodes last as well as on per-step cost: a method that balances early runs 500-step episodes for most of training, so the fastest learners by wall clock are not the cheapest per step. The last two columns correct for that. Steps per second is the run's total environment steps (mean episode reward × 5000) divided by wall time, and microseconds per step is its reciprocal. By that measure the 1983 agent and REINFORCE are cheapest, at under 10 µs per step, because each step is a handful of Python operations on tiny arrays (REINFORCE only records the step and updates once per episode). Q-learning pays about twice that for several small numpy calls per step. The 1986 networks (two forward and two backward passes), the 1988 lookahead (two extra dynamics evaluations) and Dyna (five planning updates) are the most expensive. At this scale interpreter overhead dominates arithmetic, so these numbers reflect Python call counts far more than floating-point work.
 
@@ -93,9 +124,11 @@ Hyperparameters were tuned lightly, on seed 0 only, to make each method demonstr
 
 - Python 3.10+
 - `numpy`, `matplotlib`, `tqdm`; `pytest` to run the tests
+- `torch` (PyTorch, CPU build is enough) for the 2011 to 2018 solutions; optional, everything else runs without it
 
 ```sh
 pip install numpy matplotlib tqdm pytest
+pip install torch          # only for the 2011-2018 solutions
 ```
 
 ## Quick start
@@ -153,14 +186,16 @@ During training the per-episode total reward is noisy because every episode star
 | `--soln NAME` | `1989_qlearning` | Which solution directory's `soln.py` to use. See the lineage table. |
 | `--agent {soln,qlearning,random}` | `soln` | `soln` uses `--soln`. `qlearning` is a backward-compatible alias that forces `--soln 1989_qlearning`. `random` is the uniform baseline and does not learn. |
 | `--model PATH` | `cartpole_<soln>.npz` | Where to save (train) or load (infer) the learned parameters. |
+| `--hparam KEY=VALUE` | none | Train only, repeatable. Override a constructor argument of the selected solution's agent, e.g. `--hparam hidden=64`. Values are parsed as Python literals and saved with the model, so inference needs no repeat. |
 | `--episodes N` | 5000 train / 10 infer | Number of episodes to run. |
 | `--render-every N` | 100 train / 1 infer | Animate every Nth episode. Lower is slower but shows more. |
-| `--theta-range DEGREES` | 12 | Train only. Each episode starts with the pole at a uniform random angle in ±DEGREES. Valid range 0 to 12 inclusive. Use about 3 to mimic Gymnasium's narrow start. |
+| `--theta-limit DEGREES` | 12 | Absolute pole angle at which an episode terminates, in both modes. Above 12 only for the 1986, 1992 and 1999 solutions, which read the raw state; the BOXES decoder and the grids are built for 12 and the driver refuses. See [Wider angles](#wider-angles). |
+| `--theta-range DEGREES` | = `--theta-limit` | Train only. Each episode starts with the pole at a uniform random angle in ±DEGREES. Valid range 0 to `--theta-limit` inclusive. Use about 3 to mimic Gymnasium's narrow start. |
 | `--fps F` | 50 | Animation speed in frames per second. |
 | `--no-render` | off | Run headless. Useful for fast training. |
 | `--seed N` | 0 | Random seed for the environment, agent and start states. |
 | `--x0 METERS` | random | Infer only. Initial cart position. See [Initial state](#initial-state). |
-| `--theta0 DEGREES` | random | Infer only. Initial pole angle. See [Initial state](#initial-state). |
+| `--theta0 DEGREES` | random | Infer only. Initial pole angle; must be strictly inside ±`--theta-limit`. See [Initial state](#initial-state). |
 
 Examples:
 
@@ -195,12 +230,23 @@ python main.py --mode infer --model policies/narrow.npz --theta0 -8
 |---|---|---|
 | Meaning | Cart position along the track | Pole angle from vertical |
 | Units | meters | degrees |
-| Valid range | `-2.4 < x0 < 2.4` (exclusive) | `-12 < theta0 < 12` (exclusive) |
+| Valid range | `-2.4 < x0 < 2.4` (exclusive) | `-12 < theta0 < 12` (exclusive; ±`--theta-limit` if widened) |
 | Zero means | Center of the track | Pole perfectly upright |
 | Sign | Negative = left, positive = right | Negative = tilted left, positive = tilted right |
 | Default | Uniform random in `[-0.05, 0.05]` m | Uniform random in `[-0.05, 0.05]` rad (about ±2.9°) |
 
-The limits are the same thresholds that end an episode: the cart leaving the ±2.4 m track or the pole passing ±12° from upright. Values at or beyond them are rejected by the script, since the episode would terminate on the first step. Initial cart velocity and pole angular velocity are always random in `[-0.05, 0.05]` and cannot be set from the command line. The physical meaning of these limits is derived in [the 1989 README](1989_qlearning/README.md#why-these-ranges).
+The limits are the same thresholds that end an episode: the cart leaving the ±2.4 m track or the pole passing ±12° from upright. Values at or beyond them are rejected by the script, since the episode would terminate on the first step. Initial cart velocity and pole angular velocity are always random in `[-0.05, 0.05]` and cannot be set from the command line. The physical meaning of these limits is derived in [the 1989 README](#why-these-ranges).
+
+### Wider angles
+
+`--theta-limit` raises the failure angle above the standard 12°. It applies to both modes: training episodes then start anywhere in ±`--theta-range`, which defaults to the new limit, and `--theta0` may be set anywhere inside it. Only the three solutions that read the raw scaled state accept it: `1986_actor_critic_backprop`, `1992_reinforce` and `1999_qlearning_continuous`. The 1983 BOXES decoder marks any angle past 12° as failed and the 1988, 1989 and 1990 grids clip there, so the driver refuses values above 12 for those.
+
+The useful range is bounded by the track, not the motor. The push out-accelerates gravity up to about 43°, but recovering from a wide angle means a long hard push, and the cart runs out of its ±2.4 m before the pole is upright. A hand-tuned bang-bang linear controller (see [`../mpc/`](../mpc/README.md)) recovers from at most about 34° starting at rest in the center, 37° with 1.5 m of track behind it, and 22° with 1.5 m in front. In a short experiment training on ±40° starts, REINFORCE recovered from 20° every time and from 30° three times in ten, failing by running out of track; the 1986 networks recovered from 20° most of the time; the 1999 agent did not learn with its 12° defaults but does with `--episodes 8000 --hparam hidden=64 --hparam advantage_k=0.3 --hparam lr=0.005`, recovering from 25° at the 500-step cap on three of four seeds (see its [README](1999_qlearning_continuous/README.md#wider-angles)). Beyond about 43° no push can recover the pole and the task becomes swing-up, which needs a different reward.
+
+```sh
+python main.py --mode train --soln 1992_reinforce --no-render --theta-limit 30
+python main.py --mode infer --soln 1992_reinforce --theta-limit 30 --theta0 25
+```
 
 ### Why these ranges?
 

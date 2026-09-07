@@ -103,6 +103,7 @@ class _TwoLayerNet:
 
 class ActorCriticBackpropAgent(BaseAgent):
     name = "1986_actor_critic_backprop"
+    supports_wide_angles = True  # reads the raw scaled state; no 12-degree decoder or grid
 
     def __init__(self, hidden=16, lr_actor=0.1, lr_critic=0.1, gamma=0.99, lam=0.8,
                  reward_scale=0.01, seed=None):

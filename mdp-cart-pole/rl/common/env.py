@@ -8,9 +8,15 @@ without importing the library:
     obs, reward, terminated, truncated, info = env.step(action)
 
 Observation: float32 [x, x_dot, theta, theta_dot]
-Action:      0 = push cart left, 1 = push cart right
+Action:      0 = push cart left, 1 = push cart right           (default, as Gymnasium)
+             CartPoleEnv(continuous=True) instead takes a float u in [-1, 1]
+             and applies force u * 10 N; ints 0/1 still mean full left/right.
+             Only the 1999 continuous Q-learning solution uses this mode.
 Reward:      +1 for every step taken (including the terminating step)
-Terminated:  |theta| > 12 deg  or  |x| > 2.4
+Terminated:  |theta| > theta_limit (12 deg by default)  or  |x| > 2.4
+             CartPoleEnv(theta_limit_deg=...) widens the angle limit; the class
+             attribute theta_threshold_radians keeps the 12 deg default for
+             code that needs the standard task (the BOXES decoder, the grids).
 Truncated:   episode length reaches 500 (Gymnasium does this with a TimeLimit
              wrapper; here it is built in)
 
@@ -52,27 +58,51 @@ class CartPoleEnv:
     )
     metadata = {"render_modes": []}
 
-    def __init__(self, seed=None, render_mode=None):
+    def __init__(self, seed=None, render_mode=None, continuous=False, theta_limit_deg=None):
         self.rng = np.random.default_rng(seed)
         self.render_mode = render_mode
+        self.continuous = bool(continuous)
+        if theta_limit_deg is not None:
+            assert theta_limit_deg > 0, "theta_limit_deg must be positive"
+            # instance attribute shadows the 12 deg class default
+            self.theta_threshold_radians = math.radians(float(theta_limit_deg))
         self.state = None
         self.steps = 0
+
+    @property
+    def theta_limit_deg(self):
+        return math.degrees(self.theta_threshold_radians)
 
     # ------------------------------------------------------------------ #
     # Pure functions of the MDP                                           #
     # ------------------------------------------------------------------ #
     @classmethod
     def dynamics(cls, state, action):
+        """One Euler step for a discrete action (0 = full push left, 1 = full push right)."""
+        return cls.dynamics_force(state, cls.force_mag if action == 1 else -cls.force_mag)
+
+    @classmethod
+    def action_to_force(cls, action):
+        """Map an action to a force in newtons. Ints/bools 0/1 are full pushes; floats are
+        a fraction u in [-1, 1] of force_mag (used in continuous mode)."""
+        if isinstance(action, (bool, np.bool_)) or isinstance(action, (int, np.integer)):
+            assert action in (0, 1), f"invalid discrete action {action}"
+            return cls.force_mag if action == 1 else -cls.force_mag
+        u = float(action)
+        assert math.isfinite(u), f"invalid continuous action {action}"
+        return cls.force_mag * max(-1.0, min(1.0, u))
+
+    @classmethod
+    def dynamics_force(cls, state, force):
         """
-        One Euler step of the cart-pole equations of motion. Pure function:
-        state in, next state out, no side effects.
+        One Euler step of the cart-pole equations of motion under a horizontal
+        force (newtons). Pure function: state in, next state out, no side effects.
 
         Equations from Barto, Sutton & Anderson (1983), without their friction
         terms, exactly as in Gymnasium. Paper:
         https://github.com/david78k/pendulum/blob/master/c/anderson/Neuronlike%20Adaptive%20Elements%20That%20Can%20Solve%20Difficult%20Learning%20Control%20Problems%20Barto1983.pdf
         """
         x, x_dot, theta, theta_dot = (float(v) for v in state)
-        force = cls.force_mag if action == 1 else -cls.force_mag
         costheta = math.cos(theta)
         sintheta = math.sin(theta)
 
@@ -93,14 +123,11 @@ class CartPoleEnv:
         )
 
     @classmethod
-    def is_terminal(cls, state):
+    def is_terminal(cls, state, theta_threshold=None):
+        """Failure test. Uses the standard 12 deg limit unless a threshold (radians) is given."""
+        lim = cls.theta_threshold_radians if theta_threshold is None else theta_threshold
         x, _, theta, _ = state
-        return bool(
-            x < -cls.x_threshold
-            or x > cls.x_threshold
-            or theta < -cls.theta_threshold_radians
-            or theta > cls.theta_threshold_radians
-        )
+        return bool(x < -cls.x_threshold or x > cls.x_threshold or theta < -lim or theta > lim)
 
     # ------------------------------------------------------------------ #
     # Gymnasium-style API                                                 #
@@ -130,10 +157,13 @@ class CartPoleEnv:
 
     def step(self, action):
         """Advance one step and return (obs, reward, terminated, truncated, info)."""
-        assert action in (0, 1), f"invalid action {action}"
-        self.state = self.dynamics(self.state, action)
+        if self.continuous:
+            self.state = self.dynamics_force(self.state, self.action_to_force(action))
+        else:
+            assert isinstance(action, (int, np.integer, bool, np.bool_)) and action in (0, 1), f"invalid action {action}"
+            self.state = self.dynamics(self.state, action)
         self.steps += 1
-        terminated = self.is_terminal(self.state)
+        terminated = self.is_terminal(self.state, self.theta_threshold_radians)
         truncated = self.steps >= self.max_episode_steps
         reward = 1.0
         return self._obs(), reward, terminated, truncated, {}

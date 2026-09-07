@@ -64,11 +64,69 @@ def test_infer_without_model_fails_cleanly(tmp_path):
     ["--mode", "infer", "--theta0", "12"],
     ["--mode", "train", "--theta-range", "13"],
     ["--soln", "nope"],
+    ["--mode", "train", "--theta-limit", "-5"],
+    ["--mode", "train", "--theta-limit", "0"],
+    ["--mode", "train", "--theta-limit", "30", "--soln", "1989_qlearning"],
+    ["--mode", "train", "--theta-limit", "30", "--soln", "1983_actor_critic"],
+    ["--mode", "train", "--theta-limit", "30", "--theta-range", "35", "--soln", "1992_reinforce"],
+    ["--mode", "infer", "--theta-limit", "30", "--theta0", "30", "--soln", "1992_reinforce"],
 ])
 def test_argument_validation(bad):
     out = run_cli(*bad, "--no-render")
     assert out.returncode == 2  # argparse error
     assert "error" in out.stderr
+
+
+@pytest.mark.parametrize("soln", ["1986_actor_critic_backprop", "1992_reinforce", "1999_qlearning_continuous"])
+def test_theta_limit_accepted_for_wide_angle_solutions(soln, tmp_path):
+    model = tmp_path / "m.npz"
+    out = run_cli("--mode", "train", "--soln", soln, "--no-render", "--episodes", "10",
+                  "--theta-limit", "30", "--model", str(model))
+    assert out.returncode == 0, out.stderr
+    out = run_cli("--mode", "infer", "--soln", soln, "--no-render", "--episodes", "1",
+                  "--theta-limit", "30", "--theta0", "25", "--model", str(model))
+    assert out.returncode == 0, out.stderr
+
+
+def test_wide_angle_recipe_for_1999_runs(tmp_path):
+    """The documented wide-angle hyperparameters are accepted and saved (learning itself is too slow to test here)."""
+    import json
+    import numpy as np
+    model = tmp_path / "wide.npz"
+    out = run_cli("--mode", "train", "--soln", "1999_qlearning_continuous", "--no-render", "--episodes", "5",
+                  "--theta-limit", "30", "--hparam", "hidden=64", "--hparam", "advantage_k=0.3",
+                  "--hparam", "lr=0.005", "--model", str(model))
+    assert out.returncode == 0, out.stderr
+    meta = json.loads(str(np.load(model)["__meta__"]))["hparams"]
+    assert meta["hidden"] == 64 and meta["advantage_k"] == 0.3 and meta["lr"] == 0.005
+    out = run_cli("--mode", "infer", "--soln", "1999_qlearning_continuous", "--no-render", "--episodes", "1",
+                  "--theta-limit", "30", "--theta0", "25", "--model", str(model))
+    assert out.returncode == 0, out.stderr
+
+
+def test_theta_limit_with_random_agent_is_fine():
+    out = run_cli("--mode", "infer", "--agent", "random", "--no-render", "--episodes", "2", "--theta-limit", "40")
+    assert out.returncode == 0, out.stderr
+
+
+def test_hparam_overrides_are_applied_and_saved(tmp_path):
+    import json
+    import numpy as np
+    model = tmp_path / "m.npz"
+    out = run_cli("--mode", "train", "--soln", "1989_qlearning", "--no-render", "--episodes", "5",
+                  "--hparam", "alpha=0.25", "--hparam", "bins=(1,1,4,8)", "--model", str(model))
+    assert out.returncode == 0, out.stderr
+    meta = json.loads(str(np.load(model)["__meta__"]))["hparams"]
+    assert meta["alpha"] == 0.25 and meta["bins"] == [1, 1, 4, 8]
+    out = run_cli("--mode", "infer", "--soln", "1989_qlearning", "--no-render", "--episodes", "1", "--model", str(model))
+    assert out.returncode == 0, out.stderr  # loads with its saved hyperparameters
+
+
+def test_hparam_validation():
+    assert run_cli("--mode", "train", "--no-render", "--hparam", "nokey").returncode == 2
+    assert run_cli("--mode", "infer", "--no-render", "--hparam", "alpha=0.1").returncode == 2
+    out = run_cli("--mode", "train", "--no-render", "--episodes", "1", "--hparam", "bogus=1", "--model", "/dev/null")
+    assert out.returncode != 0 and "bad --hparam" in (out.stdout + out.stderr)
 
 
 def test_legacy_qtable_format_still_loads(tmp_path):

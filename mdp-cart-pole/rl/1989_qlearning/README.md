@@ -1,6 +1,6 @@
 # 1989: Q-learning (Watkins)
 
-**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → **1989** → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md)
+**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → **1989** → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
 
 **Previous:** [1988, TD(λ) with model-based lookahead](../1988_td/README.md)
 
@@ -106,7 +106,7 @@ Q-tables saved by the original single-file version of this project (before the s
 
 ## Result
 
-Seed 0, 5000 training episodes with full-range starts, frozen policy, 20 episodes per start angle:
+Seed `[0, 5000]` training episodes with full-range starts, frozen policy, 20 episodes per start angle:
 
 | start angle | 0° | −8° | +8° | −11° | +11° |
 |---|---|---|---|---|---|

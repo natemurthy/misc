@@ -78,6 +78,7 @@ class FrameRenderer:
         (self.avg_curve,) = self.ax_curve.plot([], [], color="#3b6ea5", lw=2, label="100-ep mov avg")
         self.ax_curve.legend(loc="upper left")
         self.fig.tight_layout()
+        self.phase.unclip_head()
         self.fig.show()
 
     def _align(self):

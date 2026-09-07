@@ -27,6 +27,12 @@ import main as driver  # noqa: E402
 from common import CartPoleEnv  # noqa: E402
 
 SOLUTIONS = list(driver.SOLUTIONS)
+try:
+    import torch  # noqa: F401
+    HAVE_TORCH = True
+except ModuleNotFoundError:
+    HAVE_TORCH = False
+    SOLUTIONS = [s for s in SOLUTIONS if s not in driver.TORCH_SOLUTIONS]
 
 
 def pytest_collection_modifyitems(items):
@@ -49,13 +55,19 @@ def agent_class(solution_name):
     return load_agent_class(solution_name)
 
 
-def train(agent, episodes, seed=0, theta_range_deg=12.0, checkpoint=True):
+def make_env(agent, seed=0, theta_limit_deg=None):
+    """Environment in the action mode the agent expects (continuous for the 1999 solution)."""
+    return CartPoleEnv(seed=seed, continuous=getattr(agent, "continuous_actions", False),
+                       theta_limit_deg=theta_limit_deg)
+
+
+def train(agent, episodes, seed=0, theta_range_deg=12.0, checkpoint=True, theta_limit_deg=None):
     """
     Headless training loop mirroring main.run(): full-range start angles and
     best-checkpoint selection on a 50-episode moving average. Returns the list
     of episode returns and leaves `agent` holding the best snapshot.
     """
-    env = CartPoleEnv(seed=seed)
+    env = make_env(agent, seed, theta_limit_deg)
     start_rng = np.random.default_rng(seed + 1)
     rets, best, snap = [], -np.inf, None
     for _ in range(episodes):
@@ -80,10 +92,10 @@ def train(agent, episodes, seed=0, theta_range_deg=12.0, checkpoint=True):
     return rets
 
 
-def evaluate(agent, episodes=10, seed=99, theta0_deg=None, x0=None):
+def evaluate(agent, episodes=10, seed=99, theta0_deg=None, x0=None, theta_limit_deg=None):
     """Mean total reward of a frozen agent over `episodes` episodes."""
     agent.freeze()
-    env = CartPoleEnv(seed=seed)
+    env = make_env(agent, seed, theta_limit_deg)
     opts = {"x0": x0, "theta0": math.radians(theta0_deg) if theta0_deg is not None else None}
     totals = []
     for _ in range(episodes):

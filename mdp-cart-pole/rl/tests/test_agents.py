@@ -7,13 +7,13 @@ the `agent_class` fixture in conftest.py.
 import numpy as np
 import pytest
 
-from common import BaseAgent, CartPoleEnv, RandomAgent
-from conftest import train
+from common import BaseAgent, RandomAgent
+from conftest import make_env, train
 
 
 def _rollout(agent, n_steps=30, seed=0):
     """Run a few learning steps so the agent has non-trivial parameters."""
-    env = CartPoleEnv(seed=seed)
+    env = make_env(agent, seed)
     obs, _ = env.reset()
     for _ in range(n_steps):
         a = agent.act(obs)
@@ -34,11 +34,14 @@ def test_is_base_agent_with_name(agent_class, solution_name):
 
 def test_act_returns_valid_action(agent_class):
     agent = agent_class(seed=0)
-    env = CartPoleEnv(seed=0)
+    env = make_env(agent, 0)
     obs, _ = env.reset()
     for _ in range(20):
         a = agent.act(obs)
-        assert a in (0, 1) and isinstance(a, int)
+        if getattr(agent, "continuous_actions", False):
+            assert isinstance(a, float) and -1.0 <= a <= 1.0
+        else:
+            assert a in (0, 1) and isinstance(a, int)
         obs, *_ = env.step(a)
 
 

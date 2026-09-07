@@ -34,14 +34,14 @@ class PhasePortrait:
 
     KEEP = 8  # episodes retained on screen
 
-    def __init__(self, ax, theta_limit_deg=12.0, theta_dot_limit=4.0):
+    def __init__(self, ax, theta_limit_deg=12.0, theta_dot_limit=3.0):
         self.ax = ax
         self.theta_dot_limit = theta_dot_limit
         ax.set_title("phase portrait (closed loop)", fontsize=10)
         ax.set_xlabel("pole angle θ (deg)")
         ax.set_ylabel("pole angular velocity θ̇ (rad/s)")
         ax.set_xlim(-theta_limit_deg - 2, theta_limit_deg + 2)
-        ax.set_ylim(-theta_dot_limit, theta_dot_limit)
+        ax.set_ylim(-theta_dot_limit, theta_dot_limit)  # fixed; traces beyond it run off-axis
         for xb in (-theta_limit_deg, theta_limit_deg):
             ax.axvline(xb, color="#cc4444", lw=1, ls="--")  # termination
         ax.axhline(0, color="#bbbbbb", lw=0.8)
@@ -49,6 +49,9 @@ class PhasePortrait:
         ax.plot([0], [0], "+", color="#222222", ms=10, mew=1.5)  # upright, at rest
         ax.grid(alpha=0.3)
         self.label = ax.text(0.02, 0.98, "", transform=ax.transAxes, va="top", fontsize=9)
+        # current state; becomes an up/down caret on the axis edge when theta_dot is out of range.
+        # Clipping is switched off in unclip_head() only after the figure is laid out: an empty
+        # unclipped artist gives tight_layout a degenerate bounding box and it shrinks every axes.
         (self.head,) = ax.plot([], [], "o", color="#d38b2c", ms=6, zorder=5)
         self.traces = []  # Line2D per retained episode, oldest first
         self.current_episode = None
@@ -65,6 +68,10 @@ class PhasePortrait:
         self.current_episode = episode
         self.xs, self.ys = [], []
         self.label.set_text(f"episode {episode}")
+
+    def unclip_head(self):
+        """Let the edge carets draw fully on the axis boundary. Call after tight_layout()."""
+        self.head.set_clip_on(False)
 
     def align_to(self, top_ax, bottom_ax):
         """
@@ -84,11 +91,17 @@ class PhasePortrait:
         theta_deg, theta_dot = math.degrees(float(obs[2])), float(obs[3])
         self.xs.append(theta_deg)
         self.ys.append(theta_dot)
-        self.traces[-1].set_data(self.xs, self.ys)
-        self.head.set_data([theta_deg], [theta_dot])
-        if abs(theta_dot) > self.theta_dot_limit:  # grow the axis rather than clip the trace
-            self.theta_dot_limit = abs(theta_dot) * 1.1
-            self.ax.set_ylim(-self.theta_dot_limit, self.theta_dot_limit)
+        self.traces[-1].set_data(self.xs, self.ys)  # off-range segments are clipped by the axes
+        lim = self.theta_dot_limit
+        if theta_dot > lim:
+            self.head.set_marker("^")
+            self.head.set_data([theta_deg], [lim])
+        elif theta_dot < -lim:
+            self.head.set_marker("v")
+            self.head.set_data([theta_deg], [-lim])
+        else:
+            self.head.set_marker("o")
+            self.head.set_data([theta_deg], [theta_dot])
 
 
 class Renderer:
@@ -136,6 +149,7 @@ class Renderer:
         self.ax_curve.legend(loc="upper left")
 
         self.fig.tight_layout()
+        self.phase.unclip_head()
         self.phase.align_to(self.ax_sim, self.ax_curve)
         self.fig.show()
 

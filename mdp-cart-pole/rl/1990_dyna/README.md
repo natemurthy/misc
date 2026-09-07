@@ -1,6 +1,6 @@
 # 1990: Dyna-Q (Sutton), learning plus planning with a learned model
 
-**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → **1990** → [1992 REINFORCE](../1992_reinforce/README.md)
+**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → **1990** → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
 
 **Previous:** [1989, Q-learning](../1989_qlearning/README.md)
 
@@ -10,6 +10,7 @@
 
 - R. S. Sutton, ["Integrated Architectures for Learning, Planning, and Reacting Based on Approximating Dynamic Programming"](http://incompleteideas.net/papers/sutton-90.pdf), *Proceedings of the Seventh International Conference on Machine Learning*, 1990.
 - R. S. Sutton, ["Dyna, an Integrated Architecture for Learning, Planning, and Reacting"](https://doi.org/10.1145/122344.122377), *SIGART Bulletin* 2(4), 1991.
+- L.-J. Lin, ["Self-Improving Reactive Agents Based on Reinforcement Learning, Planning and Teaching"](https://doi.org/10.1007/BF00992699), *Machine Learning* 8:293-321, 1992. Introduces experience replay; see the note below.
 
 ## What changed from 1989
 
@@ -20,7 +21,7 @@ Two things are new in the lineage:
 - **Explicitly model-based.** The [1988](../1988_td/README.md) solution used the *true* dynamics to look ahead. Dyna *learns* its model from data, so it needs no prior knowledge of the plant, and yet it can still do the extra value propagation that a model makes possible.
 - **Sample efficiency traded for computation.** Real environment steps are usually the expensive resource. Dyna lets the agent squeeze more value updates out of each one, at the cost of CPU time between steps.
 
-Dyna also anticipates experience replay: a buffer of past transitions replayed through the same update is a Dyna sample model in all but name.
+**Experience replay, [Lin (1992)](https://doi.org/10.1007/BF00992699).** Two years after Dyna, Lin proposed storing past transitions and replaying them through the same Q-learning update. This removes the Dyna model while keeping Dyna's reuse of experience, and it is the direct ancestor of the DQN replay buffer. Our `1990_dyna` sample model, which stores recent outcomes per state-action pair and samples from them when planning, is already replay in all but name; the only difference is that replay draws transitions uniformly from one shared buffer rather than choosing a state-action pair first.
 
 ## The method
 
@@ -59,7 +60,7 @@ pytest ../tests -k dyna
 
 ## Result
 
-Seed 0, 5000 training episodes with full-range starts, frozen policy, 20 episodes per start angle:
+Seed `[0, 5000]` training episodes with full-range starts, frozen policy, 20 episodes per start angle:
 
 | start angle | 0° | −8° | +8° | −11° | +11° |
 |---|---|---|---|---|---|

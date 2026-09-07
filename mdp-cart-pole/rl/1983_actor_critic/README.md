@@ -1,6 +1,6 @@
 # 1983: Actor-critic on BOXES (Barto, Sutton and Anderson)
 
-**Lineage:** start → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md)
+**Lineage:** start → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
 
 **Next:** [1986, replacing the hand-built state decoder with networks](../1986_actor_critic_backprop/README.md)
 
@@ -10,7 +10,7 @@ A. G. Barto, R. S. Sutton and C. W. Anderson, ["Neuronlike Adaptive Elements Tha
 
 The state decoder comes from D. Michie and R. A. Chambers, "BOXES: An experiment in adaptive control", *Machine Intelligence* 2, 1968.
 
-This is the paper that made cart-pole the standard reinforcement-learning benchmark. The physical system, the ±12° and ±2.4 m failure thresholds and the 0.02 s Euler integration used by every solution in this repository are taken from it; see [the MDP definition](../1989_qlearning/README.md#the-markov-decision-process).
+This is the paper that made cart-pole the standard reinforcement-learning benchmark. The physical system, the ±12° and ±2.4 m failure thresholds and the 0.02 s Euler integration used by every solution in this repository are taken from it; see [the MDP definition](../README.md#the-markov-decision-process).
 
 ## The method
 
@@ -67,7 +67,7 @@ pytest ../tests -k 1983
 
 ## Result
 
-Seed 0, 5000 training episodes with full-range starts, frozen policy, 20 episodes per start angle:
+Seed `[0, 5000]` training episodes with full-range starts, frozen policy, 20 episodes per start angle:
 
 | start angle | 0° | −8° | +8° | −11° | +11° |
 |---|---|---|---|---|---|

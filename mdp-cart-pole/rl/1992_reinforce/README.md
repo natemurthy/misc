@@ -1,10 +1,10 @@
 # 1992: REINFORCE (Williams), Monte Carlo policy gradient
 
-**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → **1992**
+**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → **1992** → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
 
 **Previous:** [1990, Dyna-Q](../1990_dyna/README.md)
 
-**Next:** end of the reinforcement-learning lineage. The optimal-control lineage (dynamic programming, LQR, adaptive critics as approximate DP) is noted in the [top-level README](../README.md#the-optimal-control-lineage-for-later) for later.
+**Next:** [1999, Q-learning with a continuous force](../1999_qlearning_continuous/README.md)
 
 ## Reference
 
@@ -48,6 +48,10 @@ Inference (`freeze()`) takes the more probable action, $a = [\sigma(\theta^\top\
 - With $\alpha = 0.002$ the policy reaches 500 steps and then occasionally overshoots and collapses; $\alpha = 0.001$ is stable across seeds.
 - REINFORCE's `learn()` only records the transition. All parameter movement happens in `end_episode()`. The `BaseAgent` interface supports this because `main.py` calls `end_episode()` after every episode for every solution.
 
+## Wider angles
+
+This solution reads the raw scaled state, so it accepts `--theta-limit` above 12° (see [Wider angles](../README.md#wider-angles)). Its linear policy has the same form as a linear state-feedback controller, and trained on ±40° starts it recovered from 20° every time and from 30° in three of ten attempts, failing by running out of track, which is close to the ~34° physical envelope.
+
 ## Run
 
 ```sh
@@ -58,7 +62,7 @@ pytest ../tests -k reinforce
 
 ## Result
 
-Seed 0, 5000 training episodes with full-range starts, frozen policy, 20 episodes per start angle:
+Seed `[0, 5000]` training episodes with full-range starts, frozen policy, 20 episodes per start angle:
 
 | start angle | 0° | −8° | +8° | −11° | +11° |
 |---|---|---|---|---|---|

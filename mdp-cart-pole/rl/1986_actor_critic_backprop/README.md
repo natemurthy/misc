@@ -1,6 +1,6 @@
 # 1986: Actor-critic with backprop networks (Anderson)
 
-**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → **1986** → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md)
+**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → **1986** → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
 
 **Previous:** [1983, ASE/ACE on the BOXES decoder](../1983_actor_critic/README.md)
 
@@ -53,6 +53,10 @@ $(a_t - \sigma(z_t))\nabla_w z$ is $\nabla_w \log \pi(a_t \mid s_t)$ for a sigmo
 - **Reward scaling.** Rewards are multiplied by 0.01 inside the agent so the critic's targets are order 1. Positive scaling does not change the optimal policy.
 - Anderson used $\gamma = 0.9$ and five hidden units. Here $\gamma = 0.99$ to match the rest of the repository, 16 hidden units, $\lambda = 0.8$, and step sizes $\eta_a = \eta_c = 0.1$. Critic step sizes of 0.5 and above diverge.
 
+## Wider angles
+
+This solution reads the raw scaled state, so it accepts `--theta-limit` above 12° (see [Wider angles](../README.md#wider-angles)). Trained on ±40° starts it recovered from 20° most of the time but failed by pole angle from 30°.
+
 ## Run
 
 ```sh
@@ -63,7 +67,7 @@ pytest ../tests -k 1986
 
 ## Result
 
-Seed 0, 5000 training episodes with full-range starts, frozen policy, 20 episodes per start angle:
+Seed `[0, 5000]` training episodes with full-range starts, frozen policy, 20 episodes per start angle:
 
 | start angle | 0° | −8° | +8° | −11° | +11° |
 |---|---|---|---|---|---|

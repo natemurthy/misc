@@ -45,6 +45,7 @@ def _sigmoid(z):
 
 class ReinforceAgent(BaseAgent):
     name = "1992_reinforce"
+    supports_wide_angles = True  # reads the raw scaled state; no 12-degree decoder or grid
 
     def __init__(self, alpha=0.001, gamma=0.99, baseline_rate=0.05, seed=None):
         super().__init__(seed)

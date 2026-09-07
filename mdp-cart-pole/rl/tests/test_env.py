@@ -119,6 +119,60 @@ def test_random_policy_fails_quickly():
     assert 10 < np.mean(lengths) < 40  # the well-known ~22-step random baseline
 
 
+def test_continuous_mode_scales_force():
+    """u = 0.5 must accelerate the cart exactly half as hard as a full push."""
+    s0 = np.zeros(4)
+    full = CartPoleEnv.dynamics(s0, 1)
+    half = CartPoleEnv.dynamics_force(s0, CartPoleEnv.action_to_force(0.5))
+    assert half[1] == pytest.approx(0.5 * full[1])
+    env = CartPoleEnv(seed=0, continuous=True)
+    env.reset()
+    env.state = s0.copy()
+    obs, *_ = env.step(0.5)
+    assert np.allclose(obs, half, atol=1e-6)
+
+
+def test_continuous_mode_clips_and_accepts_discrete_actions():
+    assert CartPoleEnv.action_to_force(3.0) == CartPoleEnv.force_mag
+    assert CartPoleEnv.action_to_force(-7.5) == -CartPoleEnv.force_mag
+    assert CartPoleEnv.action_to_force(1) == CartPoleEnv.force_mag  # ints still mean full pushes
+    assert CartPoleEnv.action_to_force(0) == -CartPoleEnv.force_mag
+    with pytest.raises(AssertionError):
+        CartPoleEnv.action_to_force(float("nan"))
+    with pytest.raises(AssertionError):
+        CartPoleEnv.action_to_force(2)
+
+
+def test_theta_limit_widens_termination():
+    wide = CartPoleEnv(seed=0, theta_limit_deg=30)
+    assert wide.theta_limit_deg == pytest.approx(30)
+    assert CartPoleEnv.theta_threshold_radians == pytest.approx(math.radians(12))  # class default untouched
+    wide.reset(options={"theta0": math.radians(20)})
+    wide.state[3] = 0.0
+    _, _, terminated, _, _ = wide.step(1)
+    assert not terminated  # 20 degrees is inside a 30 degree limit
+    std = CartPoleEnv(seed=0)
+    std.reset(options={"theta0": math.radians(11.99)})
+    std.state[3] = 2.0
+    _, _, terminated, _, _ = std.step(1)
+    assert terminated
+    with pytest.raises(AssertionError):
+        CartPoleEnv(theta_limit_deg=0)
+
+
+def test_is_terminal_accepts_explicit_threshold():
+    s = np.array([0, 0, math.radians(20), 0])
+    assert CartPoleEnv.is_terminal(s)
+    assert not CartPoleEnv.is_terminal(s, math.radians(30))
+
+
+def test_discrete_mode_rejects_floats():
+    env = CartPoleEnv(seed=0)
+    env.reset()
+    with pytest.raises(AssertionError):
+        env.step(0.5)
+
+
 gymnasium = pytest.importorskip("gymnasium", reason="gymnasium not installed; skipping parity check")
 
 
