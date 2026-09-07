@@ -21,6 +21,7 @@ The environment class here follows Gymnasium's `Env` API: `reset(seed=, options=
 ```bash
 main.py                     CLI driver: --soln picks a solution, one train/infer loop for all
 hparam_sweep.py             parallel hyperparameter sweeps: configs x seeds in a process pool
+complexity.py               implementation-complexity table (SLOC, branches, parameters, hyperparameters)
 common/
   env.py                    the CartPole MDP (Gymnasium API, no Gymnasium dependency; optional continuous force)
   features.py               state representations: grid discretizer, BOXES decoder, normalizer
@@ -55,6 +56,7 @@ pytest -k 1983            # one solution
 - `test_env.py` checks the MDP: reset options, the five-tuple step API, one Euler step against a hand computation, termination and truncation, the ~22-step random baseline, and, if `gymnasium` is installed, a trajectory match against the reference `CartPole-v1`.
 - `test_features.py` checks the discretizers, including that the BOXES decoder produces all 162 regions with the paper's boundaries.
 - `test_wirefit.py` checks the 1999 solution's wire-fitting interpolator: it passes through the wires, peaks at the best wire, its hand-written gradients match finite differences, and the advantage-learning target reduces to Q-learning when $k = 1$.
+- `test_complexity.py` checks `complexity.py`: docstrings and comments are excluded from line counts, a known solution measures as expected, and the table has one row per solution.
 - `test_agents.py` runs every solution through the shared interface: valid actions, save/load round trip, frozen policies are deterministic and stop learning, snapshots restore, and identical seeds give identical training.
 - `test_learning.py` (marked `slow`) trains every solution from scratch with a small per-method episode budget and requires the frozen policy to survive at least 100 steps from the default start, about five times the random baseline. It also checks that Dyna with zero planning steps reproduces Q-learning exactly and that the 1988 agent never touches the model while learning.
 - `test_cli.py` exercises `main.py` as a subprocess: train-then-infer for every solution, argument validation, the legacy Q-table format, and that the untouched `gym/main.py` still imports this module's agents.
@@ -115,6 +117,75 @@ Seed `[0, 5000]` training episodes with the pole started anywhere in ±12°, the
 | random baseline (tests)| ~22 | | | | | | | | | |
 
 † The 1999 and 2011-2018 rows were timed on a different machine from the first six (an M3 Pro, one core, PyTorch on the CPU for 2011-2018), so their wall-clock figures are indicative only; the steps-per-second and per-step figures are comparable in proportion, not in absolute value.
+
+# Complexity
+
+Two different questions hide under "how complex is this solution": how much code you have to read and tune, and how much mathematics you have to understand to trust it. They are measured differently and they do not agree, which is the interesting part.
+
+## Implementation complexity
+
+`complexity.py` measures the code. Run `python complexity.py` to regenerate the table (`--json` for machine-readable output).
+
+| solution | own SLOC | branches | shared SLOC | total SLOC | learned params | hyperparams | framework |
+|---|---|---|---|---|---|---|---|
+| `1983_actor_critic` | 57 | 12 | 205 | 262 | 324 | 6 | numpy |
+| `1986_actor_critic_backprop` | 93 | 4 | 205 | 298 | 194 | 6 | numpy |
+| `1988_td` | 50 | 8 | 205 | 255 | 4,609 | 6 | numpy |
+| `1989_qlearning` | 59 | 8 | 205 | 264 | 257 | 5 | numpy |
+| `1990_dyna` | 68 | 10 | 205 | 273 | 257 | 6 | numpy |
+| `1992_reinforce` | 53 | 7 | 205 | 258 | 6 | 3 | numpy |
+| `1999_qlearning_continuous` | 157 | 12 | 205 | 362 | 491 | 14 | numpy |
+| `2011_nfqca` | 66 | 8 | 281 | 347 | 2,530 | 10 | PyTorch |
+| `2013_dqn` | 61 | 6 | 281 | 342 | 34,820 | 9 | PyTorch |
+| `2015_ddpg` | 73 | 4 | 281 | 354 | 18,308 | 13 | PyTorch |
+| `2015_trpo` | 153 | 15 | 281 | 434 | 9,155 | 11 | PyTorch |
+| `2017_ppo` | 119 | 9 | 281 | 400 | 9,155 | 11 | PyTorch |
+| `2018_sac` | 100 | 3 | 281 | 381 | 23,047 | 10 | PyTorch |
+
+Column definitions:
+
+- **own SLOC**: source lines in the solution's `soln.py`, excluding blank lines, comments and docstrings. Raw line counts would mislead here because every `soln.py` opens with a long docstring.
+- **branches**: a cyclomatic-style count of decision points in `soln.py` (one plus every `if`, loop, ternary, boolean operator, exception handler and comprehension).
+- **shared SLOC**: source lines of the `common/` modules the solution depends on. Every solution uses `env.py`, `agent.py` and `features.py`; the PyTorch solutions also use `deep.py`.
+- **learned params**: total size of the arrays the agent saves, at default settings. For the tabular methods this is the table; for the networks it includes target copies.
+- **hyperparams**: number of constructor arguments exposed through `hparams()`, a proxy for tuning burden.
+
+Three caveats on reading it:
+
+- **SLOC understates the framework solutions.** DQN is about sixty lines because autograd, Adam and the tensor library do the differentiation and optimization. The 1986 agent is longer partly because it writes its own backpropagation. The number measures what you have to read, not what runs.
+- **Branch count tracks algorithmic bookkeeping, not difficulty.** TRPO's branches come from conjugate gradient and the backtracking line search; SAC's straight-line update has almost none. Yet SAC's equations are the harder ones to derive.
+- **Hyperparameter count correlates with the tuning stories in the READMEs.** The two solutions that needed sweeps to work at all, 1999 and DQN, are among the most heavily parameterized.
+
+For a standard toolchain, `radon` gives cyclomatic complexity and a maintainability index per function and `cloc` gives language-aware line counts; `complexity.py` exists so that the numbers here are reproducible without either.
+
+## Mathematical complexity
+
+There is no accepted scalar for this. The rubric below scores each solution on five dimensions that determine how hard the method is to derive, analyse and trust. Each is an ordinal judgement, maintained by hand.
+
+1. **Derivative order.** The highest derivative the update needs. Zero for tables and for the 1983 BOXES elements, whose "gradient" is the one-hot input. First for every gradient method. Second for TRPO alone, whose Fisher-vector products differentiate the gradient of the KL divergence.
+2. **Coupled learning problems.** How many estimates are fit simultaneously and depend on one another. One for Q-learning, TD(λ) and REINFORCE. Two for the actor-critics and for TRPO and PPO (policy and value). Three for DQN and Dyna, counting the target network or the learned model as a separate estimation problem. Four for SAC: actor, two critics and the temperature, all coupled through the soft Bellman target.
+3. **Convergence theory.** Whether the update is known to converge to what it estimates. Tabular Q-learning and TD(λ) have proofs (Watkins and Dayan 1992; Sutton 1988, Tsitsiklis and Van Roy 1997 for linear on-policy). Function approximation with bootstrapping does not, off-policy least of all (the "deadly triad"). TRPO's monotonic-improvement bound is the one guarantee on the policy side.
+4. **Inner optimization.** What has to be solved to act or to update. Nothing for a lookup or an argmax over two actions. A closed-form argmax over a continuum for wire fitting. A learned maximizer, the actor, for NFQCA, DDPG and SAC. An iterative solve, conjugate gradient plus a line search under a constraint, for TRPO.
+5. **Objective structure.** How many derivation steps stand between the textbook objective and the loss in the code. A squared TD error is the baseline. Wire fitting's hand-written interpolator gradients, PPO's clipped surrogate, TRPO's constrained problem, and SAC's entropy-regularized objective with a reparameterized expectation and the tanh change-of-variables Jacobian each add one or more.
+
+| solution | derivative order | coupled problems | convergence theory | inner optimization | objective structure | overall |
+|---|---|---|---|---|---|---|
+| 1983 actor-critic | 0 | 2 | none for the pair | none | TD error with traces | low |
+| 1986 backprop actor-critic | 1 | 2 | none | none | TD error with traces, hand-written backprop | low-mid |
+| 1988 TD(λ) | 0 | 1 | yes (tabular) | one-step lookahead with the true model | TD error with traces | low |
+| 1989 Q-learning | 0 | 1 | yes (tabular) | argmax over 2 actions | TD error | low |
+| 1990 Dyna-Q | 0 | 3 (Q, model, planner) | yes for the Q part | argmax over 2 actions | TD error, sampled model | low |
+| 1992 REINFORCE | 1 | 1 | unbiased gradient; no rate | none | Monte Carlo score function with baseline | low-mid |
+| 1999 continuous Q-learning | 1 | 1 | none | closed-form argmax over a continuum | wire-fitting gradients, advantage target | mid-high |
+| 2011 NFQCA | 1 | 2 | none (fitted iteration is stable per fit) | learned maximizer | squared TD error, batch fit | mid |
+| 2013 DQN | 1 | 3 (online, target, replay) | none | argmax over 2 actions | Huber TD error | low-mid |
+| 2015 DDPG | 1 | 2 (+ targets) | none | learned maximizer | deterministic policy gradient through the critic | mid |
+| 2015 TRPO | 2 | 2 | monotonic-improvement bound | conjugate gradient + line search under a KL constraint | constrained surrogate, natural gradient, GAE | high |
+| 2017 PPO | 1 | 2 | none (heuristic trust region) | none | clipped surrogate, GAE | mid |
+| 2018 SAC | 1 | 4 | none | learned maximizer | entropy-regularized soft Bellman, reparameterization, tanh Jacobian, temperature dual | high |
+
+Read against the implementation table, the two measures disagree in instructive ways. TRPO is the longest solution and the most mathematically demanding, so both agree there. SAC has the fewest branches of any solution and the second-highest mathematical load. DQN has the most learned parameters and one of the simplest derivations. The 1999 agent is the longest numpy solution because it does by hand what the framework solutions get for free, and its derivation load is high for the same reason. The tabular methods are cheap on every axis, which is why they are the right place to start.
+
 
 Train times are wall-clock for `python main.py --mode train --soln <name> --no-render` on one CPU core at 98-99% utilization, so they are also CPU time. Episodes per second is tqdm's overall rate for the same run. Both depend on how long episodes last as well as on per-step cost: a method that balances early runs 500-step episodes for most of training, so the fastest learners by wall clock are not the cheapest per step. The last two columns correct for that. Steps per second is the run's total environment steps (mean episode reward × 5000) divided by wall time, and microseconds per step is its reciprocal. By that measure the 1983 agent and REINFORCE are cheapest, at under 10 µs per step, because each step is a handful of Python operations on tiny arrays (REINFORCE only records the step and updates once per episode). Q-learning pays about twice that for several small numpy calls per step. The 1986 networks (two forward and two backward passes), the 1988 lookahead (two extra dynamics evaluations) and Dyna (five planning updates) are the most expensive. At this scale interpreter overhead dominates arithmetic, so these numbers reflect Python call counts far more than floating-point work.
 
