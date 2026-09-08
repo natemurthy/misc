@@ -3,7 +3,7 @@
 The “Cart-Pole” problem is a classic dynamical system of study. It is deceptively simple and has been well-examined for over a hundred years. The first written description of the problem can be traced to Stephenson (1908) [0] with a surge in study within formal academic settings emerging in the 1960s [1][2][3]
 
 <p align="center">
-  <img src="cart-pole-fig.png" width=“60%" height=“60%" alt="https://chatgpt.com/c/6a9ee7f4-b8fc-83e8-ac02-24d5b8f4051f"/>
+  <img src="cart-pole-fig.png" width="68%" alt="Cart-pole system diagram"/>
   <br>
   <sub>Fig. Classic annotated diagram of the cart-pole system under study</sub>
 </p>
