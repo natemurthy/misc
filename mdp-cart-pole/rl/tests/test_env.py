@@ -5,7 +5,8 @@ import math
 import numpy as np
 import pytest
 
-from common import CartPoleEnv
+from common import CartPoleEnv, RandomAgent
+from rl_helpers import train
 
 
 def test_reset_returns_obs_and_info():
@@ -192,3 +193,11 @@ def test_matches_gymnasium_cartpole_v1_trajectory():
         assert rr == orr and rterm == oterm
         if rterm:
             break
+
+
+def test_random_agent_baseline():
+    """The uniform random policy every solution should beat: about 22 steps."""
+    agent = RandomAgent(seed=0)
+    rets = train(agent, episodes=100, seed=0, checkpoint=False)
+    assert 10 < np.mean(rets) < 40
+    assert agent.state_dict() == {}

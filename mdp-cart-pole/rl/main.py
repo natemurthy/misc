@@ -12,13 +12,16 @@ implementing one approach from the reinforcement-learning lineage:
     1990_dyna                    Sutton: Dyna-Q, learning + planning
     1992_reinforce               Williams: REINFORCE policy gradient
     1999_qlearning_continuous    Gaskett et al.: wire-fitted Q-learning, continuous force
+    2005_nac                     Peters, Vijayakumar & Schaal: natural actor-critic
+    2007_cacla                   Van Hasselt & Wiering: continuous actor-critic learning automaton
     2011_nfqca                   Hafner & Riedmiller: neural fitted Q iteration, continuous actions
+    2011_pilco                   Deisenroth & Rasmussen: PILCO, GP model-based policy search
     2013_dqn                     Mnih et al.: deep Q-network (replay + target network)
     2015_ddpg                    Lillicrap et al.: deep deterministic policy gradient
     2015_trpo                    Schulman et al.: trust region policy optimization
     2017_ppo                     Schulman et al.: proximal policy optimization
     2018_sac                     Haarnoja et al.: soft actor-critic
-    (the 2011-2018 solutions need PyTorch; everything before is numpy only)
+    (NFQCA, PILCO and the 2013-2018 solutions need PyTorch; everything before is numpy only)
 
 Only numpy, matplotlib and tqdm are required.
 
@@ -66,14 +69,17 @@ SOLUTIONS = [
     "1990_dyna",
     "1992_reinforce",
     "1999_qlearning_continuous",
+    "2005_nac",
+    "2007_cacla",
     "2011_nfqca",
+    "2011_pilco",
     "2013_dqn",
     "2015_ddpg",
     "2015_trpo",
     "2017_ppo",
     "2018_sac",
 ]
-TORCH_SOLUTIONS = SOLUTIONS[7:]  # need PyTorch
+TORCH_SOLUTIONS = [s for s in SOLUTIONS if s >= "2011"]  # need PyTorch (2011 on)
 DEFAULT_SOLUTION = "1989_qlearning"
 
 
@@ -121,12 +127,13 @@ def parse_args(argv=None):
     p.add_argument("--episodes", type=int, default=None,
                    help="number of episodes (default: 5000 for train, 10 for infer)")
     p.add_argument("--render-every", type=int, default=None,
-                   help="render every Nth episode (default: 100 for train, 1 for infer)")
+                   help="render every Nth episode (default: 100 for train, 1 for infer). The first episode is always "
+                        "rendered; 2011_pilco renders its first 18 (the 15 learning trials and three deployed episodes)")
     p.add_argument(
         "--theta-limit", type=float, default=12.0, metavar="DEGREES",
         help="pole angle (absolute value) at which an episode terminates, in both modes. Default 12, "
              "the standard task. Values above 12 are only accepted for solutions that read the raw "
-             "state (1986, 1992, 1999); the BOXES decoder and the grids are built for 12. The cart "
+             "state (1986, 1992 and 1999 onward except 2013 DQN); the BOXES decoder and the grids are built for 12. The cart "
              "cannot recover from more than about 34 degrees on the 2.4 m track regardless.",
     )
     p.add_argument(
@@ -158,7 +165,7 @@ def parse_args(argv=None):
         "are always drawn uniformly from [-0.05, 0.05]. Without these flags, position and angle "
         "are also drawn from [-0.05, 0.05] (in meters and radians respectively), as in Gymnasium. "
         "In train mode the start angle is instead drawn uniformly from +/- --theta-range degrees. "
-        "--theta-limit widens the failure angle for the 1986, 1992 and 1999 solutions."
+        "--theta-limit widens the failure angle for the solutions that read the raw state (1986, 1992, 1999 on, except DQN)."
     )
     args = p.parse_args(argv)
 
@@ -186,8 +193,8 @@ def parse_args(argv=None):
         p.error(f"--theta-limit={args.theta_limit} invalid; it is an absolute angle and must be positive")
     if args.theta_limit > 12 and args.agent != "random" and not load_solution(args.soln).Agent.supports_wide_angles:
         p.error(f"--theta-limit={args.theta_limit} is above 12 degrees, which {args.soln} does not support; "
-                f"only solutions that read the raw state do (1986_actor_critic_backprop, 1992_reinforce, "
-                f"1999_qlearning_continuous)")
+                f"only solutions that read the raw state do (1986_actor_critic_backprop, 1992_reinforce and "
+                f"every solution from 1999_qlearning_continuous on except 2013_dqn)")
     if args.theta_range is None:
         args.theta_range = args.theta_limit
     if not 0 <= args.theta_range <= args.theta_limit:
@@ -232,6 +239,12 @@ def make_agent(args):
     return agent
 
 
+def episode_is_rendered(episode, render_every, agent):
+    """Every render_every-th episode, plus the first `agent.render_first_episodes` (1 by default, so the
+    very first episode is always shown; PILCO asks for its learning trials, which are few and slow)."""
+    return episode % render_every == 0 or episode <= getattr(agent, "render_first_episodes", 1)
+
+
 def run(args, env, agent, renderer=None):
     """Run args.episodes episodes. Returns (returns, best_snapshot, best_avg, best_episode)."""
     training = args.mode == "train"
@@ -246,7 +259,7 @@ def run(args, env, agent, renderer=None):
     pbar = tqdm(total=args.episodes, desc=f"train {args.soln}", unit="ep", dynamic_ncols=True) if training else None
     try:
         for episode in range(1, args.episodes + 1):
-            render = renderer is not None and (episode % args.render_every == 0 or episode == 1)
+            render = renderer is not None and episode_is_rendered(episode, args.render_every, agent)
             if training:
                 # Start anywhere in the recoverable range so the agent learns to recover.
                 theta0_rad = start_rng.uniform(-theta_range_rad, theta_range_rad)

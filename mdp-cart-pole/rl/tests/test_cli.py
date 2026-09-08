@@ -10,6 +10,10 @@ from rl_helpers import ROOT, SOLUTIONS
 
 MAIN = ROOT / "main.py"
 
+# Every test here spawns a Python subprocess (0.3 s at best, 40 s for PILCO's training run),
+# so the whole module is slow under the 0.1 s rule in conftest.py.
+pytestmark = pytest.mark.slow
+
 
 def run_cli(*args, cwd=ROOT):
     return subprocess.run(
@@ -18,10 +22,16 @@ def run_cli(*args, cwd=ROOT):
     )
 
 
+# Extra training flags per solution. PILCO would otherwise refit its GP after 15 of the 40 episodes
+# (about 40 s); two fits already give a controller and exercise the same code path.
+TRAIN_ARGS = {"2011_pilco": ["--hparam", "max_fits=2"]}
+
+
 @pytest.mark.parametrize("soln", SOLUTIONS)
 def test_train_then_infer_round_trip(soln, tmp_path):
     model = tmp_path / f"{soln}.npz"
-    out = run_cli("--mode", "train", "--soln", soln, "--no-render", "--episodes", "40", "--model", str(model))
+    out = run_cli("--mode", "train", "--soln", soln, "--no-render", "--episodes", "40", "--model", str(model),
+                  *TRAIN_ARGS.get(soln, []))
     assert out.returncode == 0, out.stderr
     assert model.exists()
     assert f"saved {soln} parameters" in out.stdout
@@ -77,7 +87,7 @@ def test_argument_validation(bad):
     assert "error" in out.stderr
 
 
-@pytest.mark.parametrize("soln", ["1986_actor_critic_backprop", "1992_reinforce", "1999_qlearning_continuous"])
+@pytest.mark.parametrize("soln", ["1986_actor_critic_backprop", "1992_reinforce", "1999_qlearning_continuous", "2005_nac", "2007_cacla"])
 def test_theta_limit_accepted_for_wide_angle_solutions(soln, tmp_path):
     model = tmp_path / "m.npz"
     out = run_cli("--mode", "train", "--soln", soln, "--no-render", "--episodes", "10",

@@ -18,6 +18,7 @@ def test_parse_config():
         sweep.parse_config("nokey")
 
 
+@pytest.mark.slow
 def test_sweep_runs_configs_and_seeds_in_parallel():
     results = sweep.sweep("1989_qlearning", [{}, {"alpha": 0.2}], seeds=[0, 1], episodes=30,
                           eval_angles=(0,), eval_episodes=1, workers=2)
@@ -42,6 +43,7 @@ def test_early_stop_aborts_hopeless_job():
     assert results[0]["aborted"] and results[0]["episodes_run"] == 120
 
 
+@pytest.mark.slow
 def test_cli_table_and_json(tmp_path):
     out = subprocess.run(
         [sys.executable, str(ROOT / "hparam_sweep.py"), "--soln", "1989_qlearning", "--config", "",
@@ -54,6 +56,7 @@ def test_cli_table_and_json(tmp_path):
     assert len(data) == 2 and data[1]["hparams"] == {"alpha": 0.2}
 
 
+@pytest.mark.slow
 def test_cli_refuses_wide_limit_for_grid_solutions():
     out = subprocess.run([sys.executable, str(ROOT / "hparam_sweep.py"), "--soln", "1989_qlearning",
                           "--theta-limit", "30", "--episodes", "5"], cwd=ROOT, capture_output=True, text=True)

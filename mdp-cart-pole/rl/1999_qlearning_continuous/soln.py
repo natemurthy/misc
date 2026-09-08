@@ -18,7 +18,7 @@ What changed from 1989/1992
     Every earlier solution chooses between two fixed pushes. Here the action is
     a continuous force u in [-1, 1] (times 10 N) and the agent learns a
     Q-function over that continuum without ever discretizing it. The environment
-    is run in continuous mode (CartPoleEnv(continuous=True)); the plant, reward,
+    is run in continuous mode (CartPoleEnv(continuous=True)); the cart-pole system, reward,
     thresholds and start distribution are unchanged.
 
 Architecture: wire-fitted neural network (WFNN)

@@ -24,6 +24,8 @@ class BaseAgent:
     name = "base"
     continuous_actions = False   # True: act() returns a force fraction in [-1, 1] instead of 0/1
     supports_wide_angles = False  # True: works with --theta-limit above 12 degrees
+    render_first_episodes = 1     # main.py animates episodes 1..N regardless of --render-every; PILCO raises it
+                                  # so its handful of slow learning trials can be watched
 
     def __init__(self, seed=None):
         self.rng = np.random.default_rng(seed)

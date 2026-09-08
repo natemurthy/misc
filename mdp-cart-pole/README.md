@@ -3,7 +3,7 @@
 The “Cart-Pole” problem is a classic dynamical system of study. It is deceptively simple and has been well-examined for over a hundred years. The first written description of the problem can be traced to Stephenson (1908) [0] with a surge in study within formal academic settings emerging in the 1960s [1][2][3]
 
 <p align="center">
-  <img src="cart-pole-fig.png" width="70%" height="70%" alt="https://chatgpt.com/c/6a9ee7f4-b8fc-83e8-ac02-24d5b8f4051f"/>
+  <img src="cart-pole-fig.png" width="68%" alt="Cart-pole system diagram"/>
   <br>
   <sub>Fig. Classic annotated diagram of the cart-pole system under study</sub>
 </p>
@@ -31,9 +31,9 @@ I explore the cart-pole problem to understand the various implementations of sol
 This directory tree contains Python implementations of various solutions to the cart-pole problem and is configured with `pytest`. These can be run with
 
 ```sh
-pytest            # everything, takes a few minutes
-pytest -m fast    # unit and CLI tests only (majority of the cases), runs in ~38 sec
-pytest -m slow    # runs test_learning.py which takes a few minutes
+pytest            # tests everything, takes roughly 6 mins in total
+pytest -m fast    # tests a sample of important test cases, finishes in ~5 secs
+pytest -m slow    # all the slow test cases: learning runs and the subprocess CLI checks
 ```
 
 ## References 

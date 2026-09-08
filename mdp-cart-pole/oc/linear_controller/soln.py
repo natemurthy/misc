@@ -13,7 +13,7 @@ Why it is here
     This is the simplest controller in the optimal-control lineage: full-state
     linear feedback through a saturating (sign) actuator. It is what a
     linear-quadratic regulator produces once you take the sign of its output,
-    except that an LQR derives the gains from the plant model and a cost
+    except that an LQR derives the gains from the cart-pole system model and a cost
     function via the Riccati equation, whereas these were found by trial. The
     next step in this directory replaces the search with that derivation.
 

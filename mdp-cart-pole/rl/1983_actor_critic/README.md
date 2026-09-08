@@ -1,6 +1,6 @@
 # 1983: Actor-critic on BOXES (Barto, Sutton and Anderson)
 
-**Lineage:** start → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
+**Lineage:** start → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2005 NAC](../2005_nac/README.md) → [2007 CACLA](../2007_cacla/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2011 PILCO](../2011_pilco/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
 
 **Next:** [1986, replacing the hand-built state decoder with networks](../1986_actor_critic_backprop/README.md)
 
@@ -77,7 +77,7 @@ The 100-episode average first reached 500 at episode 1602. Because the BOXES dec
 
 ## Limitations
 
-- The decoder is hand-designed for this one task. Changing the plant means redesigning the boxes. Removing that dependence is the point of the [1986 solution](../1986_actor_critic_backprop/README.md).
+- The decoder is hand-designed for this one task. Changing the physical system means redesigning the boxes. Removing that dependence is the point of the [1986 solution](../1986_actor_critic_backprop/README.md).
 - Learning is on-policy and there is no convergence theory for the combined system. That theory arrives piecemeal with TD(λ) in 1988 and Q-learning in 1989.
 
 [barto1983]: https://github.com/david78k/pendulum/blob/master/c/anderson/Neuronlike%20Adaptive%20Elements%20That%20Can%20Solve%20Difficult%20Learning%20Control%20Problems%20Barto1983.pdf
