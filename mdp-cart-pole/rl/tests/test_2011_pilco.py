@@ -201,3 +201,17 @@ def test_saved_model_contains_the_gp_and_the_policy(pilco_fit, tmp_path):
     loaded.freeze(); agent.freeze()
     obs = np.array([0.1, -0.2, 0.05, 0.3])
     assert loaded.act(obs) == agent.act(obs)
+
+
+def test_first_learning_trials_are_always_rendered():
+    """main.py animates PILCO's few, slow learning trials regardless of --render-every."""
+    import main
+
+    agent = load_agent_class("2011_pilco")(seed=0)
+    assert agent.render_first_episodes == 18  # 15 fits + 3 deployed episodes
+    assert load_agent_class("2011_pilco")(seed=0, max_fits=4).render_first_episodes == 7
+    assert all(main.episode_is_rendered(e, 100, agent) for e in range(1, 19))
+    assert not main.episode_is_rendered(19, 100, agent) and main.episode_is_rendered(100, 100, agent)
+    # every other solution keeps the old rule: episode 1 and every render_every-th
+    other = load_agent_class("1989_qlearning")(seed=0)
+    assert [e for e in range(1, 201) if main.episode_is_rendered(e, 100, other)] == [1, 100, 200]

@@ -127,7 +127,8 @@ def parse_args(argv=None):
     p.add_argument("--episodes", type=int, default=None,
                    help="number of episodes (default: 5000 for train, 10 for infer)")
     p.add_argument("--render-every", type=int, default=None,
-                   help="render every Nth episode (default: 100 for train, 1 for infer)")
+                   help="render every Nth episode (default: 100 for train, 1 for infer). The first episode is always "
+                        "rendered; 2011_pilco renders its first 18 (the 15 learning trials and three deployed episodes)")
     p.add_argument(
         "--theta-limit", type=float, default=12.0, metavar="DEGREES",
         help="pole angle (absolute value) at which an episode terminates, in both modes. Default 12, "
@@ -238,6 +239,12 @@ def make_agent(args):
     return agent
 
 
+def episode_is_rendered(episode, render_every, agent):
+    """Every render_every-th episode, plus the first `agent.render_first_episodes` (1 by default, so the
+    very first episode is always shown; PILCO asks for its learning trials, which are few and slow)."""
+    return episode % render_every == 0 or episode <= getattr(agent, "render_first_episodes", 1)
+
+
 def run(args, env, agent, renderer=None):
     """Run args.episodes episodes. Returns (returns, best_snapshot, best_avg, best_episode)."""
     training = args.mode == "train"
@@ -252,7 +259,7 @@ def run(args, env, agent, renderer=None):
     pbar = tqdm(total=args.episodes, desc=f"train {args.soln}", unit="ep", dynamic_ncols=True) if training else None
     try:
         for episode in range(1, args.episodes + 1):
-            render = renderer is not None and (episode % args.render_every == 0 or episode == 1)
+            render = renderer is not None and episode_is_rendered(episode, args.render_every, agent)
             if training:
                 # Start anywhere in the recoverable range so the agent learns to recover.
                 theta0_rad = start_rng.uniform(-theta_range_rad, theta_range_rad)
