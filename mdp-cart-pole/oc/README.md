@@ -37,14 +37,14 @@ pytest                                                      # tests for the cont
 
 The environment and the three-panel visualization, including the phase portrait, are shared with `../rl/common`; the portrait's diagnostic readout shows the feedback value $u$ before the sign.
 
-**Next in this directory:** derive the gains instead of searching for them. Linearize the plant about the upright equilibrium, state a quadratic cost, solve the Riccati equation for the LQR gain vector, and compare it with the tuned vector above and with the REINFORCE policy.
+**Next in this directory:** derive the gains instead of searching for them. Linearize the cart-pole system about the upright equilibrium, state a quadratic cost, solve the Riccati equation for the LQR gain vector, and compare it with the tuned vector above and with the REINFORCE policy.
 
 ## The optimal-control lineage (for later)
 
 Reinforcement learning and optimal control converged on the same object, the Bellman equation, from different directions, and this repository so far covers only the learning side. Threads to pick up later, in rough order:
 
 - **Dynamic programming.** Bellman (1957) and value iteration on a discretized cart-pole model: the exact solution the 1989 Q-learning approximates from samples.
-- **Linear-quadratic regulation.** Linearize the plant about the upright equilibrium and solve the Riccati equation. The resulting gain vector is a five-parameter linear controller much like the REINFORCE policy, obtained in closed form from the model instead of from data. A bang-bang version follows by taking the sign.
+- **Linear-quadratic regulation.** Linearize the cart-pole system about the upright equilibrium and solve the Riccati equation. The resulting gain vector is a five-parameter linear controller much like the REINFORCE policy, obtained in closed form from the model instead of from data. A bang-bang version follows by taking the sign.
 - **Adaptive critics as approximate DP.** Werbos (1987 onward) framed the 1983 critic as Heuristic Dynamic Programming and proposed the DHP/GDHP family, which is the control-theory community's route to the same actor-critic architecture.
 - **SARSA, Rummery and Niranjan (1994).** The on-policy sibling of Q-learning: bootstrap from the action actually taken. Safer with function approximation and with exploration, which is why Sutton's 1996 results used it.
 - **Convergence proofs.** Jaakkola, Jordan and Singh (1994) and Tsitsiklis (1994) gave a stochastic-approximation framework that proves Q-learning and TD(λ) convergence in one stroke; Singh, Jaakkola, Littman and Szepesvári (circulated 1998) did the same for SARSA under decaying exploration.
@@ -53,4 +53,4 @@ Reinforcement learning and optimal control converged on the same object, the Bel
 - **Policy gradient with function approximation.** Sutton, McAllester, Singh and Mansour (1999) proved the policy gradient theorem and showed which critic is compatible with a given actor; Konda and Tsitsiklis (1999) gave convergent actor-critic algorithms. This is where the 1983 actor-critic and the 1992 REINFORCE lines formally rejoin. Ng, Harada and Russell (1999) showed which reward shapings leave the optimal policy unchanged.
 
 
-- **Model-based data efficiency with PILCO.** Deisenroth and Rasmussen (2011) learned a Gaussian-process model of the plant and swung up a real cart-pole in about ten trials, the most sample-efficient result of the period and the strongest argument for learning a model when data is expensive (question of whether this is MPC or model-based RL)
+- **Model-based data efficiency with PILCO.** Deisenroth and Rasmussen (2011) learned a Gaussian-process model of the cart-pole system and swung up a real cart-pole in about ten trials, the most sample-efficient result of the period and the strongest argument for learning a model when data is expensive (question of whether this is MPC or model-based RL)

@@ -1,10 +1,9 @@
 # 1999: Q-learning in continuous state and action spaces (Gaskett, Wettergreen and Zelinsky)
 
-**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → **1999** → [2011 NFQCA](../2011_nfqca/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
+**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → **1999** → [2005 NAC](../2005_nac/README.md) → [2007 CACLA](../2007_cacla/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2011 PILCO](../2011_pilco/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
 
 **Previous:** [1992, REINFORCE](../1992_reinforce/README.md)
-
-**Next:** [2011, neural fitted Q iteration: batch regression instead of a moving target](../2011_nfqca/README.md). The continuous force this solution introduced is also the hand-off point to the optimal-control lineage in [`../../oc/README.md`](../../oc/README.md).
+**Next:** [2005, natural actor-critic: the policy gradient measured in the policy's own geometry](../2005_nac/README.md). The continuous force this solution introduced is also the hand-off point to the optimal-control lineage in [`../../mpc/README.md`](../../mpc/README.md).
 
 ## References
 
@@ -23,7 +22,7 @@ This paper keeps Q-learning's core, learning $Q(s, a)$ from sampled transitions 
 - **Wire fitting** gives a $Q(s, \cdot)$ over the whole continuous action range from a handful of points whose maximum is known by construction, so the greedy continuous action costs one forward pass.
 - **Advantage learning** rescales the targets so that the differences between actions, which are what the policy depends on, are large enough to learn with a function approximator.
 
-For this repository the concrete change is that the agent outputs a force $u \in [-1, 1]$, applied as $10u$ newtons. The environment runs in continuous mode (`CartPoleEnv(continuous=True)`); the plant, reward, termination thresholds and start distribution are identical to the other six solutions.
+For this repository the concrete change is that the agent outputs a force $u \in [-1, 1]$, applied as $10u$ newtons. The environment runs in continuous mode (`CartPoleEnv(continuous=True)`); the cart-pole system, reward, termination thresholds and start distribution are identical to the other six solutions.
 
 ## What continuous state-action modelling buys, and what it costs
 
@@ -92,6 +91,8 @@ python ../main.py --mode infer --soln 1999_qlearning_continuous --theta0 -11
 pytest ../tests -k 1999
 ```
 
+`../tests/test_1999_qlearning_continuous.py` runs the shared interface checks and tests the wire-fitting interpolator directly: it passes through the wires, peaks at the best wire, its hand-written gradients match finite differences, and the advantage-learning target reduces to Q-learning when $k = 1$.
+
 The progress bar's diagnostics are the exploration noise `sigma` and the last TD error.
 
 ## Result
@@ -110,7 +111,7 @@ Default hyperparameters: 5 wires, 32 hidden units, step size 0.01, $\gamma = 0.9
 
 - The slowest solution in the repository per step: every update does a forward pass for $s$, another for $s'$, the interpolator and its derivatives, and a backward pass, and the replay multiplies that by several. See the timing columns in the [top-level results table](../README.md#results).
 - Sensitive to the wire-fitting constants and the step size, and to the seed, more so than any of the discrete methods. Advantage learning helps but does not remove the instability that Q-learning with a network and bootstrapped targets is known for; the fixes for that (target networks, larger replay, double Q) come in the following decade.
-- Only the continuous-force ability is new. On a two-action problem the discrete methods are simpler and, here, more reliable. The reason to have this solution is what it enables next: a learned continuous controller that can be set beside a linear-quadratic regulator on the same plant.
+- Only the continuous-force ability is new. On a two-action problem the discrete methods are simpler and, here, more reliable. The reason to have this solution is what it enables next: a learned continuous controller that can be set beside a linear-quadratic regulator on the same cart-pole system.
 
 ## Wider angles
 

@@ -1,6 +1,6 @@
 # 1990: Dyna-Q (Sutton), learning plus planning with a learned model
 
-**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → **1990** → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
+**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → **1990** → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2005 NAC](../2005_nac/README.md) → [2007 CACLA](../2007_cacla/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2011 PILCO](../2011_pilco/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
 
 **Previous:** [1989, Q-learning](../1989_qlearning/README.md)
 
@@ -18,7 +18,7 @@ Q-learning uses each real transition once and discards it. Dyna keeps a *model* 
 
 Two things are new in the lineage:
 
-- **Explicitly model-based.** The [1988](../1988_td/README.md) solution used the *true* dynamics to look ahead. Dyna *learns* its model from data, so it needs no prior knowledge of the plant, and yet it can still do the extra value propagation that a model makes possible.
+- **Explicitly model-based.** The [1988](../1988_td/README.md) solution used the *true* dynamics to look ahead. Dyna *learns* its model from data, so it needs no prior knowledge of the cart-pole system, and yet it can still do the extra value propagation that a model makes possible.
 - **Sample efficiency traded for computation.** Real environment steps are usually the expensive resource. Dyna lets the agent squeeze more value updates out of each one, at the cost of CPU time between steps.
 
 **Experience replay, [Lin (1992)](https://doi.org/10.1007/BF00992699).** Two years after Dyna, Lin proposed storing past transitions and replaying them through the same Q-learning update. This removes the Dyna model while keeping Dyna's reuse of experience, and it is the direct ancestor of the DQN replay buffer. Our `1990_dyna` sample model, which stores recent outcomes per state-action pair and samples from them when planning, is already replay in all but name; the only difference is that replay draws transitions uniformly from one shared buffer rather than choosing a state-action pair first.
@@ -57,6 +57,8 @@ python ../main.py --mode train --soln 1990_dyna --no-render
 python ../main.py --mode infer --soln 1990_dyna --theta0 -8
 pytest ../tests -k dyna
 ```
+
+`../tests/test_1990_dyna.py` runs the shared interface checks and two of its own: with zero planning steps the agent reproduces the 1989 Q-learning trajectory exactly, and with planning on, one real transition changes more of the table than the visited cell.
 
 ## Result
 

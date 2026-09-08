@@ -12,13 +12,16 @@ implementing one approach from the reinforcement-learning lineage:
     1990_dyna                    Sutton: Dyna-Q, learning + planning
     1992_reinforce               Williams: REINFORCE policy gradient
     1999_qlearning_continuous    Gaskett et al.: wire-fitted Q-learning, continuous force
+    2005_nac                     Peters, Vijayakumar & Schaal: natural actor-critic
+    2007_cacla                   Van Hasselt & Wiering: continuous actor-critic learning automaton
     2011_nfqca                   Hafner & Riedmiller: neural fitted Q iteration, continuous actions
+    2011_pilco                   Deisenroth & Rasmussen: PILCO, GP model-based policy search
     2013_dqn                     Mnih et al.: deep Q-network (replay + target network)
     2015_ddpg                    Lillicrap et al.: deep deterministic policy gradient
     2015_trpo                    Schulman et al.: trust region policy optimization
     2017_ppo                     Schulman et al.: proximal policy optimization
     2018_sac                     Haarnoja et al.: soft actor-critic
-    (the 2011-2018 solutions need PyTorch; everything before is numpy only)
+    (NFQCA, PILCO and the 2013-2018 solutions need PyTorch; everything before is numpy only)
 
 Only numpy, matplotlib and tqdm are required.
 
@@ -66,14 +69,17 @@ SOLUTIONS = [
     "1990_dyna",
     "1992_reinforce",
     "1999_qlearning_continuous",
+    "2005_nac",
+    "2007_cacla",
     "2011_nfqca",
+    "2011_pilco",
     "2013_dqn",
     "2015_ddpg",
     "2015_trpo",
     "2017_ppo",
     "2018_sac",
 ]
-TORCH_SOLUTIONS = SOLUTIONS[7:]  # need PyTorch
+TORCH_SOLUTIONS = [s for s in SOLUTIONS if s >= "2011"]  # need PyTorch (2011 on)
 DEFAULT_SOLUTION = "1989_qlearning"
 
 
@@ -126,7 +132,7 @@ def parse_args(argv=None):
         "--theta-limit", type=float, default=12.0, metavar="DEGREES",
         help="pole angle (absolute value) at which an episode terminates, in both modes. Default 12, "
              "the standard task. Values above 12 are only accepted for solutions that read the raw "
-             "state (1986, 1992, 1999); the BOXES decoder and the grids are built for 12. The cart "
+             "state (1986, 1992 and 1999 onward except 2013 DQN); the BOXES decoder and the grids are built for 12. The cart "
              "cannot recover from more than about 34 degrees on the 2.4 m track regardless.",
     )
     p.add_argument(
@@ -158,7 +164,7 @@ def parse_args(argv=None):
         "are always drawn uniformly from [-0.05, 0.05]. Without these flags, position and angle "
         "are also drawn from [-0.05, 0.05] (in meters and radians respectively), as in Gymnasium. "
         "In train mode the start angle is instead drawn uniformly from +/- --theta-range degrees. "
-        "--theta-limit widens the failure angle for the 1986, 1992 and 1999 solutions."
+        "--theta-limit widens the failure angle for the solutions that read the raw state (1986, 1992, 1999 on, except DQN)."
     )
     args = p.parse_args(argv)
 
@@ -186,8 +192,8 @@ def parse_args(argv=None):
         p.error(f"--theta-limit={args.theta_limit} invalid; it is an absolute angle and must be positive")
     if args.theta_limit > 12 and args.agent != "random" and not load_solution(args.soln).Agent.supports_wide_angles:
         p.error(f"--theta-limit={args.theta_limit} is above 12 degrees, which {args.soln} does not support; "
-                f"only solutions that read the raw state do (1986_actor_critic_backprop, 1992_reinforce, "
-                f"1999_qlearning_continuous)")
+                f"only solutions that read the raw state do (1986_actor_critic_backprop, 1992_reinforce and "
+                f"every solution from 1999_qlearning_continuous on except 2013_dqn)")
     if args.theta_range is None:
         args.theta_range = args.theta_limit
     if not 0 <= args.theta_range <= args.theta_limit:

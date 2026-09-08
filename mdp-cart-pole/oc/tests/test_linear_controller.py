@@ -71,6 +71,7 @@ def test_envelope_matches_documented_values():
     assert ahead < 25
 
 
+@pytest.mark.slow
 def test_tune_recovers_default_gains_or_better():
     best, angle = tune(k_thetadot=(0.35, 0.5), k_x=(0.02, 0.05), k_xdot=(0.1, 0.2))
     assert angle >= max_recoverable_angle(DEFAULT_GAINS) - 1e-6
@@ -89,12 +90,14 @@ def run_cli(*args):
                           cwd=OC_DIR, capture_output=True, text=True, timeout=600)
 
 
+@pytest.mark.slow
 def test_cli_run_headless():
     out = run_cli("--mode", "run", "--no-render", "--episodes", "3", "--theta-limit", "45", "--theta0", "25", "--x0", "-1.0")
     assert out.returncode == 0, out.stderr
     assert out.stdout.count("reached the 500-step limit") == 3
 
 
+@pytest.mark.slow
 def test_cli_envelope_and_validation():
     out = run_cli("--mode", "envelope")
     assert out.returncode == 0, out.stderr

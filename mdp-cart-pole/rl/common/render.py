@@ -25,7 +25,7 @@ class PhasePortrait:
     """
     Trajectory of each rendered episode through the (theta, theta_dot) plane.
 
-    The closed loop of plant plus policy is a dynamical system; this is its
+    The closed loop of cart-pole system plus policy is a dynamical system; this is its
     state-space picture. A good policy spirals in toward the origin and then
     chatters in a small cycle around it (bang-bang control). A failing one
     spirals out through the +/-12 degree lines. Earlier episodes are kept at

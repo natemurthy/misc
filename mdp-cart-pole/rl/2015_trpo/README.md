@@ -1,6 +1,6 @@
 # 2015: Trust Region Policy Optimization (Schulman, Levine, Moritz, Jordan and Abbeel)
 
-**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → **2015 TRPO** → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
+**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → [1986 backprop actor-critic](../1986_actor_critic_backprop/README.md) → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2005 NAC](../2005_nac/README.md) → [2007 CACLA](../2007_cacla/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2011 PILCO](../2011_pilco/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → **2015 TRPO** → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
 
 **Previous:** [2015 DDPG](../2015_ddpg/README.md)
 
@@ -77,6 +77,6 @@ The 100-episode average first reached 500 at episode 2530. Training took 182 s o
 
 ## Limitations
 
-- On-policy: each batch is used once, so it needs far more environment steps than DQN or DDPG for the same result. On a plant that steps in microseconds that costs nothing; on a robot it is the reason the off-policy line exists.
+- On-policy: each batch is used once, so it needs far more environment steps than DQN or DDPG for the same result. On a cart-pole simulator that steps in microseconds that costs nothing; on a robot it is the reason the off-policy line exists.
 - Each update solves a conjugate-gradient problem and a line search, which is heavier per update than a gradient step and awkward with architectures that share parameters between policy and value or use dropout and normalization layers. PPO (2017) keeps the trust-region idea and drops the machinery.
 - The KL bound is a bound on the policy distribution, not on performance in the environment; the monotonic-improvement theorem holds for the exact surrogate and constraint, and the sampled, approximate version can still take a bad step.

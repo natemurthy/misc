@@ -1,6 +1,6 @@
 # 1986: Actor-critic with backprop networks (Anderson)
 
-**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → **1986** → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
+**Lineage:** [1983 actor-critic](../1983_actor_critic/README.md) → **1986** → [1988 TD(λ)](../1988_td/README.md) → [1989 Q-learning](../1989_qlearning/README.md) → [1990 Dyna](../1990_dyna/README.md) → [1992 REINFORCE](../1992_reinforce/README.md) → [1999 continuous Q-learning](../1999_qlearning_continuous/README.md) → [2005 NAC](../2005_nac/README.md) → [2007 CACLA](../2007_cacla/README.md) → [2011 NFQCA](../2011_nfqca/README.md) → [2011 PILCO](../2011_pilco/README.md) → [2013 DQN](../2013_dqn/README.md) → [2015 DDPG](../2015_ddpg/README.md) → [2015 TRPO](../2015_trpo/README.md) → [2017 PPO](../2017_ppo/README.md) → [2018 SAC](../2018_sac/README.md)
 
 **Previous:** [1983, ASE/ACE on the BOXES decoder](../1983_actor_critic/README.md)
 
@@ -18,7 +18,7 @@ Anderson was the third author of the 1983 paper. This line of work is the first 
 
 The 1983 elements were linear in a hand-built feature vector: 162 boxes chosen by a human who already understood the problem. Anderson replaced each element with a two-layer network that reads the raw, normalized four-dimensional state and learns its own hidden features by backpropagation. Everything else about the architecture, an actor that acts and a critic that evaluates, is kept.
 
-The improvement is representational. No one has to decide where the box boundaries go, the same code would work on a different plant, and the value function can be smooth rather than piecewise constant. The cost is that learning became slower and less predictable, which Anderson reported at the time and which this implementation reproduces: it needs eligibility traces and careful step sizes where the tabular version did not.
+The improvement is representational. No one has to decide where the box boundaries go, the same code would work on a different physical system, and the value function can be smooth rather than piecewise constant. The cost is that learning became slower and less predictable, which Anderson reported at the time and which this implementation reproduces: it needs eligibility traces and careful step sizes where the tabular version did not.
 
 ## The method
 

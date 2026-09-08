@@ -14,7 +14,9 @@ for d in (OC_DIR, RL_DIR):
 
 
 def pytest_collection_modifyitems(items):
-    # same convention as rl/tests: everything not marked slow is fast
+    # same convention as rl/tests: everything not marked slow (i.e. under 0.1 s) is fast.
+    # Only this suite's items: the hook is session-wide and rl/tests/conftest.py has its own.
+    here = Path(__file__).resolve().parent
     for item in items:
-        if "slow" not in item.keywords:
+        if Path(str(item.fspath)).resolve().is_relative_to(here) and "slow" not in item.keywords:
             item.add_marker(pytest.mark.fast)

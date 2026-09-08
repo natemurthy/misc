@@ -4,9 +4,14 @@ import numpy as np
 import pytest
 
 from common import normalize_obs
+from interface_checks import AgentInterfaceTests
 from rl_helpers import load_agent_class
 
 Agent = load_agent_class("1999_qlearning_continuous")
+
+
+class TestInterface(AgentInterfaceTests):
+    solution = "1999_qlearning_continuous"
 
 
 def test_interpolator_passes_through_wires_in_the_sharp_limit():
