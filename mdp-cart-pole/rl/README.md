@@ -72,10 +72,14 @@ pytest -k 1983            # tests for just one major solution for the given year
 
 ## Hyperparameter sweeps
 
-`hparam_sweep.py` trains many (configuration, seed) pairs in parallel processes, headless, with the same loop and best-checkpoint rule as `main.py`, then scores each frozen policy from a few start angles and prints a table. It exists because the 1999 solution's tuning runs took minutes each; on a 12-core machine eight jobs finish in the time of the slowest one.
+By default, each of the solutions are trained to respect the 12° pole angle limit imposed by [Barto, et al. (1983)][barto1983]; however, some models can handle wider angles and thus can be configured to manage these scenarios by tuning available hyperparameters. The  `hparam_sweep.py` allows for exactly this and trains many (configuration, seed) pairs in parallel processes, headless, with the same loop and best-checkpoint rule as `main.py`, then scores each frozen policy from a few start angles and prints a table. 
+
+This script was introduced to modify default hyperparams during [`1999_qlearning_continuous/`]((1999_qlearning_continuous/README.md#tuning-with-hparam_sweeppy)) tuning runs which took minutes each. On a 12-core machine eight jobs finish in the time of the slowest one. The `hparam_sweep.py` enables mini-batched reply for this solution approach like so:
 
 ```sh
-python hparam_sweep.py --soln 1999_qlearning_continuous --theta-limit 30 --episodes 4000 --seeds 0 1 --eval-angles 12 20 25 \
+python hparam_sweep.py --soln 1999_qlearning_continuous \
+    --episodes 4000 --seeds 0 1 \
+    --theta-limit 30  --eval-angles 12 20 25 \
     --config "hidden=64,advantage_k=0.3" --config "hidden=128,advantage_k=0.3,lr=0.005" --config "" \
     --early-stop 1000:30 --json results.json
 ```
@@ -84,7 +88,7 @@ python hparam_sweep.py --soln 1999_qlearning_continuous --theta-limit 30 --episo
 
 **What one job does.** Each job is exactly one `main.py --mode train --no-render` run: a fresh agent with the given constructor overrides and seed, full-range start angles, the best 100-episode checkpoint kept, then the frozen policy run from each `--eval-angles` value in both directions. The table reports, per job, the best 100-episode average and the episode it was reached at, the mean steps survived from each start angle, and the wall time. Two seeds is the usual minimum, because a setting that works on seed 0 alone is the most common way to fool yourself on this problem.
 
-**When to reach for it.** It works for any solution, since every agent exposes its constructor arguments through `hparams()`, but it earns its keep in four situations:
+**When to reach for it.** It works for any solution, since every agent exposes its constructor arguments through `hparams()`, but it is really useful in four situations:
 
 - A solution does not learn at its first defaults on the standard task and a serial trial-and-error loop would take hours.
 - The task is changed, as with `--theta-limit 30`, and the defaults tuned for 12° no longer apply.
@@ -93,10 +97,10 @@ python hparam_sweep.py --soln 1999_qlearning_continuous --theta-limit 30 --episo
 
 **Where it was used.** The solution READMEs record the sweeps behind their defaults:
 
-- [1999 continuous Q-learning](1999_qlearning_continuous/README.md#tuning-with-hparam_sweeppy): the tool's origin. Eight configurations at two seeds each found the wire-fitting constants, then the wider-angle recipe (`hidden=64`, `advantage_k=0.3`, `lr=0.005`, 8000 episodes) that recovers from 25° on three of four seeds; the choice between batched and one-at-a-time replay came out of the same runs.
-- [2013 DQN](2013_dqn/README.md): eight settings on two seeds. The first defaults, 64 units at a step size of 1e-3, learned and then collapsed, the instability DQN is known for. 128 units at 5e-4 reached the cap from both 0° and 11° on both seeds and became the default.
-- [2005 NAC](2005_nac/README.md): a twelve-seed sweep over the update schedule exposed the one failure mode, a single huge natural-gradient step taken from a regression with fewer rows than columns early in training, and produced the `min_steps` guard that fixed it. The same sweeps showed what the forgetting factor $\beta$ trades: bias against data.
-- [2007 CACLA](2007_cacla/README.md): the paper's own settings (12 hidden units, TD(0), $\sigma = 0.1$) did not learn with the +1-per-step reward; the defaults are the result of comparing widths, traces and exploration noise, and CACLA+Var stays off because a three-seed comparison found plain CACLA as good or better.
+- [1999 Q-learning (continuous)](1999_qlearning_continuous/README.md#tuning-with-hparam_sweeppy): the tool's origin. Eight configurations at two seeds each found the wire-fitting constants, then the wider-angle recipe (`hidden=64`, `advantage_k=0.3`, `lr=0.005`, 8000 episodes) that recovers from 25° on three of four seeds; the choice between batched and one-at-a-time replay came out of the same runs.
+- [2005 NAC](2005_nac/README.md#tuning-with-hparam_sweeppy): a twelve-seed sweep over the update schedule exposed the one failure mode, a single huge natural-gradient step taken from a regression with fewer rows than columns early in training, and produced the `min_steps` guard that fixed it. The same sweeps showed what the forgetting factor $\beta$ trades: bias against data.
+- [2007 CACLA](2007_cacla/README.md#tuning-with-hparam_sweeppy): the paper's own settings (12 hidden units, TD(0), $\sigma = 0.1$) did not learn with the +1-per-step reward; the defaults are the result of comparing widths, traces and exploration noise, and CACLA+Var stays off because a three-seed comparison found plain CACLA as good or better.
+- [2013 DQN](2013_dqn/README.md#tuning-with-hparam_sweeppy): eight settings on two seeds. The first defaults, 64 units at a step size of 1e-3, learned and then collapsed, the instability DQN is known for. 128 units at 5e-4 reached the cap from both 0° and 11° on both seeds and became the default.
 
 The other solutions were tuned by hand on seed 0, lightly, to make each method demonstrably work; the results table is not a fair benchmark of the methods against each other, and each README notes where its settings depart from its paper.
 
@@ -164,22 +168,22 @@ The solutions which appeared from 1983 to 2007 do not involve any deep learning 
 
 | Solution | Own SLOC | Branches | Shared SLOC | Total SLOC | Network architecture | Learned params | Hyperparams | Library |
 |---|---|---|---|---|---|---|---|---|
-| [`1983_actor_critic/`](1983_actor_critic/README.md) | 57 | 12 | 205 | 262 | - | 324 | 6 | numpy |
-| [`1986_actor_critic_backprop/`](1986_actor_critic_backprop/README.md) | 93 | 4 | 205 | 298 | MLP (tanh): critic/actor 4 × 16 × 1 | 194 | 6 | numpy |
-| [`1988_td/`](1988_td/README.md) | 50 | 8 | 205 | 255 | - | 4,609 | 6 | numpy |
-| [`1989_qlearning/`](1989_qlearning/README.md) | 59 | 8 | 205 | 264 | - | 257 | 5 | numpy |
-| [`1990_dyna/`](1990_dyna/README.md) | 68 | 10 | 205 | 273 | - | 257 | 6 | numpy |
-| [`1992_reinforce/`](1992_reinforce/README.md) | 53 | 7 | 205 | 258 | - | 6 | 3 | numpy |
-| [`1999_qlearning_continuous/`](1999_qlearning_continuous/README.md) | 157 | 12 | 205 | 362 | MLP (tanh): net 4 × 32 × 10 | 491 | 14 | numpy |
-| [`2005_nac/`](2005_nac/README.md) | 102 | 11 | 205 | 307 | - | 27 | 11 | numpy |
-| [`2007_cacla/`](2007_cacla/README.md) | 116 | 10 | 205 | 321 | MLP (tanh): critic/actor 4 × 64 × 1 | 772 | 12 | numpy |
-| [`2011_nfqca/`](2011_nfqca/README.md) | 66 | 8 | 281 | 347 | MLP (tanh): actor 4 × 32 × 32 × 1, critic 5 × 32 × 32 × 1 | 2,530 | 10 | PyTorch |
-| [`2011_pilco/`](2011_pilco/README.md) | 220 | 19 | 281 | 501 | GP dynamics model + 5-parameter linear controller | 33 | 9 | PyTorch |
-| [`2013_dqn/`](2013_dqn/README.md) | 61 | 6 | 281 | 342 | MLP (relu): q (+ target) 4 × 128 × 128 × 2 | 34,820 | 9 | PyTorch |
-| [`2015_ddpg/`](2015_ddpg/README.md) | 73 | 4 | 281 | 354 | MLP (relu): actor (+ target) 4 × 64 × 64 × 1, critic (+ target) 5 × 64 × 64 × 1 | 18,308 | 13 | PyTorch |
-| [`2015_trpo/`](2015_trpo/README.md) | 153 | 15 | 281 | 434 | MLP (tanh): pi 4 × 64 × 64 × 2, vf 4 × 64 × 64 × 1 | 9,155 | 11 | PyTorch |
-| [`2017_ppo/`](2017_ppo/README.md) | 119 | 9 | 281 | 400 | MLP (tanh): pi 4 × 64 × 64 × 2, vf 4 × 64 × 64 × 1 | 9,155 | 11 | PyTorch |
-| [`2018_sac/`](2018_sac/README.md) | 100 | 3 | 281 | 381 | MLP (relu): actor 4 × 64 × 64 × 2, q1/q2 (+ target) 5 × 64 × 64 × 1 | 23,047 | 10 | PyTorch |
+| [`1983_actor_critic/`](1983_actor_critic/README.md) | 57 | 12 | 206 | 263 | - | 324 | 6 | numpy |
+| [`1986_actor_critic_backprop/`](1986_actor_critic_backprop/README.md) | 93 | 4 | 206 | 299 | MLP (tanh): critic/actor 4 × 16 × 1 | 194 | 6 | numpy |
+| [`1988_td/`](1988_td/README.md) | 50 | 8 | 206 | 256 | - | 4,609 | 6 | numpy |
+| [`1989_qlearning/`](1989_qlearning/README.md) | 59 | 8 | 206 | 265 | - | 257 | 5 | numpy |
+| [`1990_dyna/`](1990_dyna/README.md) | 68 | 10 | 206 | 274 | - | 257 | 6 | numpy |
+| [`1992_reinforce/`](1992_reinforce/README.md) | 53 | 7 | 206 | 259 | - | 6 | 3 | numpy |
+| [`1999_qlearning_continuous/`](1999_qlearning_continuous/README.md) | 157 | 12 | 206 | 363 | MLP (tanh): net 4 × 32 × 10 | 491 | 14 | numpy |
+| [`2005_nac/`](2005_nac/README.md) | 102 | 11 | 206 | 308 | - | 27 | 11 | numpy |
+| [`2007_cacla/`](2007_cacla/README.md) | 116 | 10 | 206 | 322 | MLP (tanh): critic/actor 4 × 64 × 1 | 772 | 12 | numpy |
+| [`2011_nfqca/`](2011_nfqca/README.md) | 66 | 8 | 282 | 348 | MLP (tanh): actor 4 × 32 × 32 × 1, critic 5 × 32 × 32 × 1 | 2,530 | 10 | PyTorch |
+| [`2011_pilco/`](2011_pilco/README.md) | 221 | 19 | 282 | 503 | GP dynamics model + 5-parameter linear controller | 33 | 9 | PyTorch |
+| [`2013_dqn/`](2013_dqn/README.md) | 61 | 6 | 282 | 343 | MLP (relu): q (+ target) 4 × 128 × 128 × 2 | 34,820 | 9 | PyTorch |
+| [`2015_ddpg/`](2015_ddpg/README.md) | 73 | 4 | 282 | 355 | MLP (relu): actor (+ target) 4 × 64 × 64 × 1, critic (+ target) 5 × 64 × 64 × 1 | 18,308 | 13 | PyTorch |
+| [`2015_trpo/`](2015_trpo/README.md) | 153 | 15 | 282 | 435 | MLP (tanh): pi 4 × 64 × 64 × 2, vf 4 × 64 × 64 × 1 | 9,155 | 11 | PyTorch |
+| [`2017_ppo/`](2017_ppo/README.md) | 119 | 9 | 282 | 401 | MLP (tanh): pi 4 × 64 × 64 × 2, vf 4 × 64 × 64 × 1 | 9,155 | 11 | PyTorch |
+| [`2018_sac/`](2018_sac/README.md) | 100 | 3 | 282 | 382 | MLP (relu): actor 4 × 64 × 64 × 2, q1/q2 (+ target) 5 × 64 × 64 × 1 | 23,047 | 10 | PyTorch |
 
 Column definitions:
 
@@ -298,7 +302,7 @@ During training the per-episode total reward is noisy because every episode star
 | `--model PATH` | `cartpole_<soln>.npz` | Where to save (train) or load (infer) the learned parameters. |
 | `--hparam KEY=VALUE` | none | Train only, repeatable. Override a constructor argument of the selected solution's agent, e.g. `--hparam hidden=64`. Values are parsed as Python literals and saved with the model, so inference needs no repeat. |
 | `--episodes N` | 5000 train / 10 infer | Number of episodes to run. |
-| `--render-every N` | 100 train / 1 infer | Animate every Nth episode. Lower is slower but shows more. |
+| `--render-every N` | 100 train / 1 infer | Animate every Nth episode. Lower is slower but shows more. The first episode is always animated. `2011_pilco` animates its first 18 (its 15 learning trials, each ending in a Gaussian-process fit, plus three deployed episodes), since with only a handful of learning episodes the default would show none of them. |
 | `--theta-limit DEGREES` | 12 | Absolute pole angle at which an episode terminates, in both modes. Above 12 only for the solutions that read the raw state (1986, 1992, 1999 and later, except DQN); the BOXES decoder and the grids are built for 12 and the driver refuses. See [Wider angles](#wider-angles). |
 | `--theta-range DEGREES` | = `--theta-limit` | Train only. Each episode starts with the pole at a uniform random angle in ±DEGREES. Valid range 0 to `--theta-limit` inclusive. Use about 3 to mimic Gymnasium's narrow start. |
 | `--fps F` | 50 | Animation speed in frames per second. |

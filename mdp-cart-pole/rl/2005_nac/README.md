@@ -97,9 +97,33 @@ The applied force is the sample clipped to $[-1, 1]$ (times 10 N); the score is 
 - A ridge of $10^{-3}$ is added to the diagonal of $A$ before the solve. $A$ is not symmetric, so this is a conditioning device, not a Bayesian prior.
 - **Reward scaling.** Rewards are multiplied by 0.01 so $V$ lies in $[0, 1]$ and $v$, $w$ and $\alpha$ are $O(1)$ numbers. Because $[v; w] = A^{-1} b$ is linear in the reward, this is exactly equivalent to using $\alpha = 0.01$ on the raw reward; unlike the TD critics of 1986 and 1999, nothing else depends on the scale. What the +1-per-step reward does change is where the signal lives: $V(s) \approx 1$ for every state more than ~200 steps from failure, so the advantage is nonzero only near the edges of the recoverable region, and the terminal step's zero next-state basis is the entire failure signal. No failure penalty and no value initialization trick were needed.
 - $\sigma = \mathrm{sigmoid}(\xi)$ as in the paper, floored at `sigma_min` = 0.05 so the Fisher metric, which grows as $1/\sigma^2$, stays finite. In practice $\xi$ hardly moves: $\sigma$ went from 0.40 to 0.37 in 5,000 episodes. The natural gradient step on $\xi$ is $F_{\xi\xi}^{-1}\, \partial J/\partial\xi$, and with the exploration noise already far below the ±1 force range the advantage carries little information about $\sigma$ on this task. The frozen policy applies the mean, so the residual noise costs nothing at inference.
-- **Defaults**: $\alpha = 1.0$, $\gamma = 0.99$, $\lambda = 0.5$, $\beta = 0.5$, $\varepsilon = 0.35$, `update_every` 10, `min_steps` 100, ridge $10^{-3}$, reward scale 0.01, $\sigma_0 = 0.4$, $\sigma_{\min} = 0.05$. What the sweeps (four seeds, 1,500 episodes, [`hparam_sweep.py`](../README.md#hyperparameter-sweeps)) found: $\alpha = 0.5$ is too slow on two of four seeds and $\alpha = 2$ works as well as 1; $\gamma = 0.98$ and $0.99$ both work; $\lambda = 0.9$ works; $\beta = 0.7$ works; $\beta = 0$, the complete reset under which the paper's convergence statement holds, is fragile here (one seed in four reaches 500) because the critic restarts from nothing after every policy step and with `min_steps` it then has to wait for data every time.
+- **Defaults**: $\alpha = 1.0$, $\gamma = 0.99$, $\lambda = 0.5$, $\beta = 0.5$, $\varepsilon = 0.35$, `update_every` 10, `min_steps` 100, ridge $10^{-3}$, reward scale 0.01, $\sigma_0 = 0.4$, $\sigma_{\min} = 0.05$. What the sweeps found is tabulated under "Tuning with `hparam_sweep.py`" below: the defaults are the only setting that reaches the cap on all four seeds without giving up speed; $\alpha = 0.5$ and $\gamma = 0.98$ also reach it on all four but later, $\alpha = 2$, $\lambda = 0.9$ and $\beta = 0.7$ each lose seeds, and $\beta = 0$, the complete reset under which the paper's convergence statement holds, is fragile here because the critic restarts from nothing after every policy step and with `min_steps` it then has to wait for data every time.
 - **Episodic NAC is not implemented.** eNAC (Table 2 of the paper) sums the Bellman equation along a roll-out so that each episode gives one regression row, $\sum_t \gamma^t \nabla_\theta \log \pi_\theta(u_t \mid s_t)^\top w + J = \sum_t \gamma^t r_t$, and needs only a scalar baseline $J$ instead of a basis for $V$; the paper's own experiments use it because it removes the basis functions' influence on the gradient. The LSTD-Q(λ) version is implemented here because it is the algorithm the paper derives, because a state-dependent baseline is what this lineage's 1983 and 1986 critics already provide, and because it updates from every step rather than once per episode, which matters when early episodes are ten steps long.
 - `learn()` only accumulates $z$, $A$, $b$; the solve, the angle test and the actor step happen in `end_episode()`. `state_dict()` holds $\theta$ (6), $v$ (15) and $w$ (6); the statistics $A$, $b$, $z$ are rebuilt from experience and are not saved.
+
+### Tuning with `hparam_sweep.py`
+
+NAC has eleven hyperparameters and the paper fixes almost none of them for cart-pole, so the defaults above were chosen with [`../hparam_sweep.py`](../README.md#hyperparameter-sweeps), which trains every (configuration, seed) pair in its own process with the same loop as `main.py` and scores the frozen policy from chosen start angles. The process had three rounds. First, a schedule sweep: how often to force a policy step (`update_every` 2, 5, 10) and whether to gate it on the angle test alone. That round, run on twelve seeds because the failure it was looking for is rare, found the collapse described under "Two guards the paper does not have": one seed in twelve took a single enormous natural-gradient step from a regression with fewer rows than columns, and the `min_steps` guard came out of it. Second, one-factor-at-a-time sweeps around the defaults on four seeds and 1,500 episodes, which is enough for a working setting to reach the 500-step cap and cheap enough (about 25 s a job in numpy) that 28 jobs finish in about a minute. Third, the benchmark run in the Result section on seed 0 with the chosen defaults. Four seeds rather than two because NAC's failures are seed-dependent: a setting that reaches the cap on one seed and stalls at 250 on another is the typical outcome, not the exception.
+
+```sh
+python ../hparam_sweep.py --soln 2005_nac --episodes 1500 --seeds 0 1 2 3 --eval-angles 0 11 \
+    --config "" --config "alpha=0.5" --config "alpha=2.0" --config "gamma=0.98" \
+    --config "lam=0.9" --config "beta=0.7" --config "beta=0.0"
+```
+
+What the one-factor round showed (frozen policy from 0° and 11°, episode at which the 100-episode average first reached 500):
+
+| setting | seeds at the cap from both angles | first episode at avg 500, seeds 0-3 |
+|---|---|---|
+| defaults | 4 of 4 | 543, 930, 781, 414 |
+| $\alpha = 0.5$ | 4 of 4 | 1033, 823, 633, 611 (slower on every seed) |
+| $\alpha = 2$ | 3 of 4 | 421, 280, never (best 279), 414 |
+| $\gamma = 0.98$ | 4 of 4 | 742, 709, 1361, 938 (slower on every seed) |
+| $\lambda = 0.9$ | 2 of 4 | never (263), 502, never (365), 501 |
+| $\beta = 0.7$ | 3 of 4 | never (297), 804, 633, 395 |
+| $\beta = 0$ | 2 of 4 | never (33), never (168), 1042, 485 |
+
+The defaults are the only row that is both fast and reliable. The step size trades speed for one failed seed at $\alpha = 2$; longer traces ($\lambda = 0.9$) and slower forgetting ($\beta = 0.7$) each lose seeds by letting stale statistics from earlier policies into the critic; and $\beta = 0$, the full reset under which the paper's convergence argument holds, fails on two seeds because the critic restarts from nothing after every policy step and then waits for `min_steps` of data every time.
 
 ## Run
 

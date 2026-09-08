@@ -185,6 +185,9 @@ class PILCOAgent(TorchAgent):
         # initial state distribution for planning: Gymnasium's +/-0.05 box, pole angle wide
         s0 = np.array([0.03, 0.03, math.radians(theta0_std_deg), 0.03]) / STATE_SCALE
         self.S0 = torch.diag(torch.as_tensor(s0 ** 2, dtype=DT))
+        # With rendering on, main.py animates these first episodes regardless of --render-every: the
+        # learning trials are few, slow (a GP fit each) and the interesting part, plus three deployed ones.
+        self.render_first_episodes = max_fits + 3
         self.data_x, self.data_u, self.data_y = [], [], []   # all recorded 0.1 s transitions (raw units)
         self.episodes, self.fits = 0, 0
         self._u, self._left, self._x_hold, self._steps_in_hold = 0.0, 0, None, 0

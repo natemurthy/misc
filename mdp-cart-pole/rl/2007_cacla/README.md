@@ -66,6 +66,28 @@ The paper's experiments: feedforward networks with 12 hidden units (sigmoid onto
 - $\gamma = 0.99$ matches the rest of the repository. The paper's best cart-pole results used 0.8 and 0.95 but it also reports that CACLA's performance "barely decreases" at 0.99, unlike the value-based methods, which is what happened here.
 - The agent reads the raw scaled state, so it accepts `--theta-limit` above 12° (see [Wider angles](../README.md#wider-angles)).
 
+### Tuning with `hparam_sweep.py`
+
+The paper's own settings did not learn here, so CACLA's defaults were arrived at by comparison rather than transcription, and the comparisons were run with [`../hparam_sweep.py`](../README.md#hyperparameter-sweeps): every (configuration, seed) pair trains in its own process with the same loop and best-checkpoint rule as `main.py`, then the frozen policy is scored from 0° and 11°. Three seeds and the full 5,000 episodes each, because CACLA's learning starts late (episode 450 on seed 0, later on others) and its outcome varies more across seeds than across most of its settings, so a two-seed sweep at a short budget would have been misleading in both directions. Fifteen 5,000-episode jobs finish in under a minute in numpy. The questions asked were the ones the implementation notes above answer: does the paper's configuration (12 hidden units, TD(0), $\sigma = 0.1$) work with the +1-per-step reward; which of the three departures from it (wider critic, traces, more exploration) actually matters; and whether CACLA+Var, the paper's faster variant, should be the default.
+
+```sh
+python ../hparam_sweep.py --soln 2007_cacla --episodes 5000 --seeds 0 1 2 --eval-angles 0 11 \
+    --config "" --config "var=True" --config "hidden=12,lam=0.0,sigma=0.1,sigma_min=0.1" \
+    --config "sigma=0.1,sigma_min=0.1" --config "lam=0.0"
+```
+
+Frozen policy, mean steps from 0° / 11°, seeds 0, 1, 2:
+
+| setting | seed 0 | seed 1 | seed 2 |
+|---|---|---|---|
+| defaults (64 hidden, $\lambda = 0.7$, $\sigma = 0.3$) | 500 / 500 | 498 / 406 | 500 / 500 |
+| `var=True` (CACLA+Var) | 500 / 302 | 120 / 128 | 500 / 434 |
+| the paper's settings: 12 hidden, TD(0), $\sigma = 0.1$ | 500 / 446 | 28 / 8 | 24 / 7 |
+| $\sigma = 0.1$ alone | 491 / 315 | 36 / 21 | 157 / 161 |
+| TD(0) alone ($\lambda = 0$) | 258 / 259 | 41 / 51 | 500 / 259 |
+
+The paper's configuration works on one seed in three and stays at the random baseline on the other two; each of the three departures is load-bearing, since removing exploration noise or traces alone loses two seeds. CACLA+Var is worse than plain CACLA on every seed here, for the reason given above (its running variance starts far above the scale of the 0.01-scaled TD errors), so it stays a flag. Note also that only seed 0 reached a 100-episode training average of 500, at episode 3642; seeds 1 and 2 peaked at 290 and 334 while their frozen policies balance, because the training policy carries constant $\sigma = 0.3$ noise. The training average understates CACLA, which is why the sweep scores frozen policies.
+
 ## Run
 
 ```sh

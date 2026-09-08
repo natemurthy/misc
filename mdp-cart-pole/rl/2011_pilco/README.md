@@ -99,6 +99,8 @@ python ../main.py --mode infer --soln 2011_pilco --theta0 -11
 pytest ../tests -k pilco
 ```
 
+With rendering on, the first 18 training episodes are animated regardless of `--render-every` (the agent sets `render_first_episodes = max_fits + 3`): the 15 learning trials are the whole story of a PILCO run and would otherwise never be shown, and the phase portrait makes the jump from the second trial's fall to the third trial's 500 steps visible. Each of those episodes ends with a fit of a few seconds, during which the window pauses.
+
 `../tests/test_2011_pilco.py` runs the shared interface checks and tests the model directly: the GP mean interpolates its training targets, moment matching agrees with Monte Carlo sampling through the GP, the saturating cost is 0 at the target, and the action is held for the model's 0.1 s time step. Because a fit costs seconds, the file fits the GP once in a module fixture; the interface checks run on that pre-fitted agent with its fit budget spent, and the remaining tests read the fit record: no call to `CartPoleEnv.dynamics` while learning, fitting stopped at the budget, two fits already clear the learning threshold, and the saved model carries the GP data and the controller.
 
 ## Result
