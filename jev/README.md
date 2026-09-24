@@ -123,7 +123,11 @@ All 32 colors were classified correctly by both models in every mode that comple
 | threads (32 workers) | 32 | 1.25 s | 1,027 ms | 1,246 ms | 13,867 | 1,312 | 32/32 | 0.99 |
 | batch (1 request) | 1 | 0.50 s | 496 ms | 496 ms | 6,477 | 1,283 | 32/32 | 0.81 |
 
-Batch mode halves input tokens and is the fastest, but confidence dipped below 0.99 on 6 of 32 colors (low 0.81) versus a 0.99 floor when each color had its own request. Answers were still all correct.
+Threads mode fans the 32 single-color requests across a thread pool. Per-call latency rose from about 300 ms to a median of 1,027 ms under concurrency, so the server or network was absorbing the burst, but wall clock still dropped 8x. No 429s occurred.
+
+Batch mode puts all 32 colors in one state object keyed color_01 through color_32, and asks 32 choice questions named dominant_01 through dominant_32. Each question's instructions point at its own color by key and tell the model to ignore the others. TypeSafe evaluates independent questions over shared state in parallel server-side, so the whole thing costs one roundtrip. It also halves input tokens because the shared prompt overhead is paid once.
+
+One tradeoff to note. Batch mode is fastest and cheapest, but confidence dipped on 6 of the 32 colors, with a low of 0.81, versus a floor of 0.99 when each color got its own request. Every answer was still correct. With 32 colors in one state the model has more to attend to per question. If you scale this up, recommend capping batch size somewhere in the tens and shard beyond that, or use threads mode when per-item confidence matters more than cost.
 
 ### Claude / claude-opus-5, effort low
 
