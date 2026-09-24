@@ -6,6 +6,8 @@
 
 **Next:** [2018 SAC](../2018_sac/README.md)
 
+> **Spotlight.** Proximal Policy Optimization (PPO) is widely acknowledged today as the best all-around reinforcement learning algorithm for solving the Cart-Pole environment. While Cart-Pole is a simple environment that can be solved by many algorithms, PPO is favored because it strikes the ideal balance between ease of implementation, sample efficiency, and training stability. It is the go-to in Stable-Baselines3, CleanRL, and most tutorials because it is stable, needs almost no tuning, and reaches the 500-step cap on `CartPole-v1` reliably in roughly 50–100k environment steps. If someone says "just solve it," PPO is the expected answer. The [result below](#result) bears this out in this lineage: PPO's 100-episode average reaches 500 at episode 512 with the paper's default hyperparameters essentially unchanged, the fastest of the discrete-action methods and behind only PILCO and SAC overall.
+
 ## Reference
 
 J. Schulman, F. Wolski, P. Dhariwal, A. Radford and O. Klimov, ["Proximal Policy Optimization Algorithms"](https://arxiv.org/abs/1707.06347), arXiv 1707.06347, 2017. The advantage estimator is from J. Schulman, P. Moritz, S. Levine, M. Jordan and P. Abbeel, ["High-Dimensional Continuous Control Using Generalized Advantage Estimation"](https://arxiv.org/abs/1506.02438), arXiv 1506.02438, 2015.
