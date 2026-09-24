@@ -108,6 +108,10 @@ The other solutions were tuned by hand on seed 0, lightly, to make each method d
 
 Read the READMEs in order; each explains what it improves on the one before. The 1983 to 1992 solutions and DQN, TRPO and PPO use Gymnasium's two-action version of the problem. The 1999, 2005, 2007, both 2011, 2015 DDPG and 2018 SAC solutions control a continuous force anywhere in ±10 N, which the environment supports through a `continuous=True` flag with the cart-pole system, reward, thresholds and start distribution unchanged. The 1983 to 2007 solutions are numpy only; from 2011 on the methods need automatic differentiation and use PyTorch on the CPU (see `common/deep.py`), which is an optional dependency: without it those PyTorch solutions and their tests are skipped.
 
+> [!NOTE]  
+> See spotlight note about PPO in [`2017_ppo/`](2017_ppo/README.md) which is regarded today as the best all-around reinforcement learning algorithm for solving the Cart-Pole environment.
+
+
 | Directory | Year | Method | Learns | Discrete/Continuous | model-based? |
 |---|---|---|---|---|---|
 | [`1983_actor_critic/`](1983_actor_critic/README.md) | 1983 | Barto, Sutton, Anderson: ASE/ACE actor-critic on the BOXES decoder | actor weights + critic values, 162 boxes each | discrete | no |
@@ -126,9 +130,6 @@ Read the READMEs in order; each explains what it improves on the one before. The
 | [`2015_trpo/`](2015_trpo/README.md) | 2015 | Schulman et al.: trust region policy optimization, natural gradient with a KL constraint | policy + value nets (PyTorch) | discrete | no |
 | [`2017_ppo/`](2017_ppo/README.md) | 2017 | Schulman et al.: proximal policy optimization, clipped surrogate | policy + value nets (PyTorch) | discrete | no |
 | [`2018_sac/`](2018_sac/README.md) | 2018 | Haarnoja et al.: soft actor-critic, maximum entropy, **continuous force** | actor + twin critics + temperature (PyTorch) | continuous | no |
-
-> **Spotlight: PPO.** Proximal Policy Optimization ([`2017_ppo/`](2017_ppo/README.md)) is widely acknowledged today as the best all-around reinforcement learning algorithm for solving the Cart-Pole environment. While Cart-Pole is a simple environment that can be solved by many algorithms, PPO is favored because it strikes the ideal balance between ease of implementation, sample efficiency, and training stability. It is the go-to in Stable-Baselines3, CleanRL, and most tutorials because it is stable, needs almost no tuning, and reaches the 500-step cap on `CartPole-v1` reliably in roughly 50–100k environment steps. If someone says "just solve it," PPO is the expected answer. In the [results table](#results) below its 100-episode average reaches 500 at episode 512, the fastest of the discrete-action methods and behind only PILCO and SAC overall. Candidates for what comes after it in the lineage are collected in [`next.md`](next.md).
-
 
 # Results
 
