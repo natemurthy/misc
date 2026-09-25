@@ -1,12 +1,12 @@
-# Jev (TypeSafe) vs Claude on a 32-color classification
+# Jev vs Claude on a 32-color classification
 
 ## Summary
 
-I asked Claude to spin up 32 subagents to generate 32 random rgb hex codes and then used the TypeSafe plugin to ask Jev to classify them as mostly red, green, or blue using its choice primitive and did the same with Claude.
+I asked Claude to spin up 32 subagents to generate 32 random rgb hex codes and then used the TypeSafe plugin to ask Jev to classify them as mostly red, green, or blue using its `choice` primitive and then attempted the same with Claude for comparison.
 
-Some results below:point_down::skin-tone-5: The speed and consistency are the most notable aspects, see tradeoffs between individual API requests for one batched request.
+Some results below. The speed and consistency are the most notable aspects, see tradeoffs between individual API requests for one batched request.
 
-Comparing the results: Jev was **13x faster** than Claude in one batched request, **28x faster** when making single API requests in parallel (and succeeded in API requests, whereas Claude hit rate limit errors nearly two-thirds of requests). Single sequential per request median with Jev was about `300 ms` compared to Claude at `1.8 sec`
+Comparing the results: Jev was **13x faster** than Claude in one batched request, **28x faster** when making single API requests in parallel (and succeeded in API requests, whereas Claude hit rate limit errors in nearly two-thirds of requests). Single sequential per request median with Jev was about `300 ms` compared to Claude at `1.8 sec`.
 
 ## Method
 
@@ -14,7 +14,7 @@ Comparing the results: Jev was **13x faster** than Claude in one batched request
 
 I prompted Claude in my CLI with:
 
-```sh
+```
 > Using the maximum number of sub agents configured for this claude code CLI,
 pls generate 32 handom rgb values in hex format and write to file rgb_NN.txt
 where NN is the agent index on the inclusive range [01..32]. Afer all the
@@ -27,11 +27,11 @@ agents done, pls calc the SHA256 sum of all these rgb values in hex format.
 printf '#%02X%02X%02X\n' $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) > rgb_NN.txt
 ```
 
-then `cat` the file and reported the value back. A two-tool-call task that should take 10-20 s.
-
-SHA256 of the 32 files concatenated in index order, each `#RRGGBB\n`:
+The 32 files are concatenated in index order to calculate the SHA256 of each `#RRGGBB\n` with:
 
 ```
+cat rgb_[0-9][0-9].txt | shasum -a 256
+
 b5a121aff37c3c348ae76a3ff693d2695d4df5f7a3c4576d9c2c101440a52df2
 ```
 
