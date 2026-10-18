@@ -1,9 +1,27 @@
-class Spreadsheet():
+"""
+Prompt:
 
-    """
-    A1 (key) -> (0,0)
-    C3 (key) -> (2,2)
-    """
+In this multi-step problem, the TC will be asked to implement a `Spreadsheet` class that stores table cell values and
+perform operations on it. 
+
+Steps:
+
+1. What underlying data structure should be used to store table cell indexes/keys and values and why? Here are some common examples of
+   spreadsheet entries:
+
+   - Text: the string value `"dog"` in cell `A1`
+   - Numeric: the decimal value `1.8` in cell `B1`
+
+2. Implement a method to `set()` a value in a `Spreadsheet` class cell
+3. Implement a method to `get()` a value from the `Spreadsheet` in a given cell
+4. Implement logic to perform arithmetic in a cell, e.g. `Spreadsheet.set("A1", "= 10 + 23 + 2")`
+   Here are some examples of spreadsheet entries:
+5. Implement logic to perform arithmetic in a call referencing other cells, e.g. `Spreadsheet.set("F1", "= D2 + E3 + 10")`
+
+Bonus: implement logic to handle date/time manipulation (TODO for eng team to define)
+"""
+
+class Spreadsheet():
 
     underlying_table = {}
 
@@ -46,42 +64,50 @@ class Spreadsheet():
 
 
 """
-Test cases
+Test cases:
+
+Interview driver will copy-and-paste test cases with TC over a shared Google Doc to serve as a joint clipboard
 """
 
+# Test setup
 s = Spreadsheet()
 
+# Test case 1
 s.set("A1", "Monday")
 s.set("A2", "Tuesday")
 s.set("A3", "Wednesday")
-
 print(s.get("A1") == "Monday")
 print(s.get("A2") == "Tuesday")
 print(s.get("A3") == "Wednesday")
 
+# Test case 2
 print(s.get("B4") == "")
 
+# Test case 3
 s.set("A1", "= 10 + 23 + 2")
 print(s.get("A1") == "35")
 
+# Test case 4
 s.set("C1", "= -8 + 9 + -2")
 print(s.get("C1") == "-1")
 
-# “= D2 + E3 + 10”
+# Test case 5
 s.set("D2", "10")
 s.set("E3", "15")
 s.set("F1", "= D2 + E3 + 10")
-
 print(s.get("F1") == "35")
 
+# Test case 6
 s.set("F2", "= F1 + 10")
 print(s.get("F2") == "45")
 
+# Test case 7
 s.set("F3", "= F1 + F2")
 print(s.get("F3") == "80")
 print(s.get("F3") == "80")
 
+# Test case 8 
+# NOTE(nathan) this is as far as I got during my 1 hour session, failed this one
 s.set("F2", "0")
 print(s.get("F3"))
 print(s.get("F3") == "35")
-

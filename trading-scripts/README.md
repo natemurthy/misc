@@ -28,6 +28,21 @@ python extract_symbols.py
 This output file may be used as input to any of the pull scripts
 
 
+## Testing
+
+Unit tests live in `tests/`, one file per script that has a `main()`. They run fully offline:
+network calls (yfinance, TipRanks, ycharts, Gemini, Playwright) and Postgres are replaced with
+fakes from `tests/conftest.py`, and file-based scripts run inside a temp directory.
+
+```bash
+pip install pytest
+python -m pytest
+```
+
+Two tests are marked `xfail(strict=True)` to pin known bugs (`str_to_usd` scales a `K` suffix by
+1e6, and `fetch_tipranks_estimates` crashes on a network error). They start failing, and so flag
+themselves, once the underlying bug is fixed.
+
 ## TODO
 
 More notes TBD when this code stabilizes
